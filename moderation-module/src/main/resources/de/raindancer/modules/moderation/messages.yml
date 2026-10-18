@@ -122,6 +122,14 @@ moderation:
     handing-out-is-off: "<gray>Only the server owner may hand out ranks on this server."
     granted: "<green>Gave <white><player></white> <white><what></white>."
     revoked: "<yellow>Took <white><what></white> from <white><player></white>."
+    added: "<green><white><player></white> is now also <<colour>><rank></<colour>><gray>."
+    taken: "<yellow><white><player></white> is no longer <white><rank></white>."
+    you-also-are: "<green>You are now also <<colour>><rank></<colour>><gray>. <gray><what>"
+    you-no-longer-are: "<yellow>You are no longer <white><rank></white>."
+    already: "<gray><player> is already <white><rank></white>. Promoting them into it again changes remarkably little."
+    not-that-rank: "<gray><player> is not <white><rank></white>. Hard to take away what was never there."
+    departments-are-admins: "<gray>Departments are handed out by admins, not by the rung below them."
+    no-group: "<red>There is no permission group <white><group></white> to put anybody in. <gray>Is LuckPerms running?"
     preset-restored: "<green><white><player></white> is back to exactly what their rank grants."
 
   # ── said late, because they were not there at the time ───────────────────

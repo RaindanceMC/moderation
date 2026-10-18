@@ -12,26 +12,24 @@ import org.bukkit.Material;
  * command nobody could use, and nothing to find it by.
  *
  * <h2>Why they are split as finely as this</h2>
- * Because the split is the only thing that makes a trial helper possible. Somebody who can mute must
+ * Because the split is the only thing that makes a support rank possible. Somebody who can mute must
  * not thereby be able to ban; somebody who may look inside an inventory must not thereby be able to
  * take things out of it. Both of those were one node before, and both were granted to people who only
  * needed the smaller half.
  */
 public enum ModerationPermission {
 
-    // ── from a trial mod upward: can see everything, and change almost nothing ─────────────
-    // Deliberately generous about *reading*. A trial who cannot see a record or a report cannot learn
-    // the job, and the whole point of the rank is that they are useful while being watched.
+    // ── from support upward: helping players, never stopping them ──────────────────────────
     WARN("warn", "Put a warning on somebody's record", Material.YELLOW_BANNER, 1, false),
     HISTORY("history", "Read what has happened to somebody", Material.BOOK, 1, true),
     STAFF_CHAT("staffchat", "Talk in the staff channel", Material.OAK_SIGN, 1, true),
     REPORTS("reports", "Read the report queue and deal with what is in it", Material.BELL, 1, true),
-    INVSEE("invsee", "Look inside somebody's inventory", Material.CHEST, 1, true),
-    CHATLOG("chatlog", "Read and search everything said in public chat", Material.BOOK, 1, true),
-    ATTEMPTS("attempts", "See what punished players tried to do anyway, and be told when they try",
-            Material.TRIPWIRE_HOOK, 1, true),
 
-    // ── from a mod upward: the full working set ────────────────────────────────────────────
+    // ── from a mod upward: the full working set, chat and anticheat included ───────────────
+    INVSEE("invsee", "Look inside somebody's inventory", Material.CHEST, 2, true),
+    CHATLOG("chatlog", "Read and search everything said in public chat", Material.BOOK, 2, true),
+    ATTEMPTS("attempts", "See what punished players tried to do anyway, and be told when they try",
+            Material.TRIPWIRE_HOOK, 2, true),
     MUTE("mute", "Stop somebody talking, and let them talk again", Material.PAPER, 2, false),
     KICK("kick", "Throw somebody off, once", Material.LEATHER_BOOTS, 2, false),
     TEMPBAN("tempban", "Ban somebody for a limited time, up to the configured maximum",
@@ -137,7 +135,7 @@ public enum ModerationPermission {
     }
 
     /**
-     * The lowest staff tier that gets this, by weight — 1 trial mod, 2 mod, 3 admin, 4 owner.
+     * The lowest staff tier that gets this, by weight — 1 support, 2 mod, 3 admin, 4 owner.
      *
      * <h2>Why the tier lives here rather than in a list inside {@code StaffRank}</h2>
      * Because a list is a second place to remember. The version that listed each tier's nodes by hand

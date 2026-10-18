@@ -1,9 +1,12 @@
 package de.raindancer.modules.moderation;
 
+import de.raindancer.core.data.store.YamlStore;
 import de.raindancer.core.platform.permission.Grants;
+import de.raindancer.core.platform.permission.LocalGroups;
 import de.raindancer.modules.moderation.model.ModerationPermission;
 import de.raindancer.modules.moderation.model.StaffRank;
 import de.raindancer.modules.moderation.store.StaffRoster;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -14,356 +17,154 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Who is staff, at what rank, and whether their permissions still match it.
- *
- * <h2>Why the rank is stored when the permissions are the real power</h2>
- * Because the rank is the thing a person says out loud — "she's a moderator" — and the nodes are the
- * thing the server acts on. Keeping only the nodes means nobody can answer "what rank is she?" without
- * comparing thirteen booleans against four presets; keeping only the rank means the per-person toggles
- * cannot exist.
- *
- * <p>So both, with the roster owning the label and Core's {@link Grants} owning the power — and this
- * class able to say when the two have drifted apart, which is exactly what a moderator with one extra
- * node is.
- */
+/** The roster is a view of the staff groups: who is in which, kept in step with the groups themselves. */
 class StaffRosterTest {
 
-    private final UUID ayla = UUID.randomUUID();
-    private final UUID bram = UUID.randomUUID();
+    @TempDir
+    Path folder;
 
-    private StaffRoster rosterIn(Path folder) {
-        return new StaffRoster(folder, new Grants(folder));
+    private static final UUID ALEX = UUID.randomUUID();
+    private static final UUID BO = UUID.randomUUID();
+    private Grants grants;
+    private LocalGroups groups;
+    private StaffRoster roster;
+
+    @BeforeEach
+    void setUp() {
+        grants = new Grants(folder);
+        groups = new LocalGroups(new YamlStore(folder.resolve("groups.yml")), grants);
+        roster = new StaffRoster(groups);
+        roster.seedGroups();
     }
 
     @Nested
-    @DisplayName("promoting")
-    class Promoting {
+    @DisplayName("the ladder")
+    class Ladder {
 
         @Test
-        @DisplayName("promoting somebody records the rank and grants its nodes")
-        void promoted(@TempDir Path folder) {
-            Grants grants = new Grants(folder);
-            StaffRoster roster = new StaffRoster(folder, grants);
+        @DisplayName("promoting puts them in the rank's group, and they get its permissions")
+        void promoted() {
+            assertThat(roster.promote(ALEX, StaffRank.MOD)).isTrue();
 
-            roster.promote(ayla, StaffRank.MOD);
-
-            assertThat(roster.rankOf(ayla)).contains(StaffRank.MOD);
-            assertThat(roster.isStaff(ayla)).isTrue();
-            assertThat(grants.has(ayla, ModerationPermission.MUTE.node())).isTrue();
-            assertThat(grants.has(ayla, ModerationPermission.BAN.node())).isFalse();
+            assertThat(roster.rankOf(ALEX)).contains(StaffRank.MOD);
+            assertThat(groups.directGroupsOf(ALEX)).containsExactly("mod");
+            assertThat(grants.nodesFor(ALEX)).contains(ModerationPermission.MUTE.node(),
+                    ModerationPermission.WARN.node());
         }
 
         @Test
-        @DisplayName("promoting again replaces the old nodes rather than adding to them")
-        void promotingReplaces(@TempDir Path folder) {
-            // A demotion is a promotion downwards, and the version that only added nodes would have
-            // made every demotion a no-op — the dangerous direction, since nobody notices.
-            Grants grants = new Grants(folder);
-            StaffRoster roster = new StaffRoster(folder, grants);
-            roster.promote(ayla, StaffRank.MOD);
+        @DisplayName("a new rung replaces the old one rather than stacking on it")
+        void oneRung() {
+            roster.promote(ALEX, StaffRank.ADMIN);
+            roster.promote(ALEX, StaffRank.SUPPORT);
 
-            roster.promote(ayla, StaffRank.TRIAL_MOD);
-
-            assertThat(roster.rankOf(ayla)).contains(StaffRank.TRIAL_MOD);
-            assertThat(grants.has(ayla, ModerationPermission.BAN.node())).isFalse();
-            assertThat(grants.has(ayla, ModerationPermission.WARN.node())).isTrue();
+            assertThat(roster.rankOf(ALEX)).contains(StaffRank.SUPPORT);
+            assertThat(groups.directGroupsOf(ALEX)).containsExactly("support");
+            assertThat(grants.nodesFor(ALEX)).doesNotContain(ModerationPermission.MUTE.node());
         }
 
         @Test
-        @DisplayName("an admin gets the claim count perk; a moderator does not")
-        void theClaimsHalf(@TempDir Path folder) {
-            Grants grants = new Grants(folder);
-            StaffRoster roster = new StaffRoster(folder, grants);
-
-            roster.promote(ayla, StaffRank.ADMIN);
-            roster.promote(bram, StaffRank.MOD);
-
-            // Not rec.admin.nolimit any more, and not the other two protection nodes either: claims reads
-            // /claimadmin bypass's own toggle for the claim limit, the costs and no-claim zones now, so
-            // there is nothing left here for a promotion to hand out for free. rec.maxclaims.unlimited is
-            // the one genuine rank perk that survives — a claim count, not a protection bypass.
-            assertThat(grants.has(ayla, "rec.maxclaims.unlimited")).isTrue();
-            assertThat(grants.has(bram, "rec.maxclaims.unlimited")).isFalse();
-            assertThat(grants.has(bram, "rec.admin"))
-                    .as("a moderator still needs to act on a claim while moderating")
-                    .isTrue();
+        @DisplayName("promoting to the rank they already hold changes nothing")
+        void same() {
+            roster.promote(ALEX, StaffRank.MOD);
+            assertThat(roster.promote(ALEX, StaffRank.MOD)).isFalse();
         }
 
         @Test
-        @DisplayName("a null player or rank changes nothing")
-        void nulls(@TempDir Path folder) {
-            StaffRoster roster = rosterIn(folder);
+        @DisplayName("demoting takes every staff group and every permission with it")
+        void demoted() {
+            roster.promote(ALEX, StaffRank.MOD);
+            roster.promote(ALEX, StaffRank.BUILDER);
 
+            assertThat(roster.demote(ALEX)).isTrue();
+
+            assertThat(roster.isStaff(ALEX)).isFalse();
+            assertThat(groups.directGroupsOf(ALEX)).isEmpty();
+            assertThat(grants.nodesFor(ALEX)).isEmpty();
+            assertThat(roster.demote(ALEX)).isFalse();
+        }
+
+        @Test
+        @DisplayName("null players or ranks change nothing")
+        void nulls() {
             assertThat(roster.promote(null, StaffRank.MOD)).isFalse();
-            assertThat(roster.promote(ayla, null)).isFalse();
-            assertThat(roster.size()).isZero();
+            assertThat(roster.promote(ALEX, null)).isFalse();
+            assertThat(roster.isStaff(ALEX)).isFalse();
         }
     }
 
     @Nested
-    @DisplayName("demoting")
-    class Demoting {
+    @DisplayName("the departments")
+    class Departments {
 
         @Test
-        @DisplayName("demoting takes the rank and every node with it")
-        void demoted(@TempDir Path folder) {
-            Grants grants = new Grants(folder);
-            StaffRoster roster = new StaffRoster(folder, grants);
-            roster.promote(ayla, StaffRank.ADMIN);
+        @DisplayName("a department stacks on a rung, and on other departments")
+        void stacks() {
+            roster.promote(ALEX, StaffRank.MOD);
+            roster.promote(ALEX, StaffRank.BUILDER);
+            roster.promote(ALEX, StaffRank.DEV);
 
-            assertThat(roster.demote(ayla)).isTrue();
-
-            assertThat(roster.rankOf(ayla)).isEmpty();
-            assertThat(roster.isStaff(ayla)).isFalse();
-            assertThat(grants.nodesFor(ayla))
-                    .as("a demoted admin who keeps immunity is an account nobody can act on and "
-                            + "nobody meant to protect")
-                    .isEmpty();
+            assertThat(roster.rankOf(ALEX)).contains(StaffRank.MOD);
+            assertThat(roster.departmentsOf(ALEX)).containsExactlyInAnyOrder(StaffRank.BUILDER, StaffRank.DEV);
         }
 
         @Test
-        @DisplayName("demoting somebody who is not staff says so rather than pretending")
-        void notStaff(@TempDir Path folder) {
-            StaffRoster roster = rosterIn(folder);
+        @DisplayName("somebody only in a department is staff without a rung")
+        void departmentOnly() {
+            roster.promote(BO, StaffRank.CREATOR);
 
-            assertThat(roster.demote(ayla)).isFalse();
-            assertThat(roster.demote(null)).isFalse();
+            assertThat(roster.isStaff(BO)).isTrue();
+            assertThat(roster.rankOf(BO)).isEmpty();
+            assertThat(roster.ofRank(StaffRank.CREATOR)).containsExactly(BO);
         }
 
         @Test
-        @DisplayName("demoting one person leaves everybody else alone")
-        void onlyThem(@TempDir Path folder) {
-            Grants grants = new Grants(folder);
-            StaffRoster roster = new StaffRoster(folder, grants);
-            roster.promote(ayla, StaffRank.MOD);
-            roster.promote(bram, StaffRank.MOD);
+        @DisplayName("one department can be taken away and the rest stays")
+        void takeOne() {
+            roster.promote(ALEX, StaffRank.MOD);
+            roster.promote(ALEX, StaffRank.BUILDER);
 
-            roster.demote(ayla);
+            assertThat(roster.takeAway(ALEX, StaffRank.BUILDER)).isTrue();
+            assertThat(roster.takeAway(ALEX, StaffRank.BUILDER)).isFalse();
 
-            assertThat(roster.isStaff(bram)).isTrue();
-            assertThat(grants.has(bram, ModerationPermission.MUTE.node())).isTrue();
+            assertThat(roster.rankOf(ALEX)).contains(StaffRank.MOD);
+            assertThat(roster.departmentsOf(ALEX)).isEmpty();
         }
     }
 
     @Nested
-    @DisplayName("individual toggles")
-    class Toggles {
+    @DisplayName("kept in step with the groups")
+    class InStep {
 
         @Test
-        @DisplayName("one node can be given without changing the rank")
-        void givenOne(@TempDir Path folder) {
-            // The exception the presets exist to make rare, not impossible: one helper who is trusted
-            // to ban, without inventing a fifth tier for her.
-            Grants grants = new Grants(folder);
-            StaffRoster roster = new StaffRoster(folder, grants);
-            roster.promote(ayla, StaffRank.MOD);
+        @DisplayName("a membership added outside the roster shows up once it is refreshed")
+        void outsideChange() {
+            groups.join(ALEX, "admin");
+            assertThat(roster.rankOf(ALEX)).isEmpty();
 
-            assertThat(roster.toggle(ayla, ModerationPermission.BAN.node())).isTrue();
+            roster.refresh(ALEX);
 
-            assertThat(grants.has(ayla, ModerationPermission.BAN.node())).isTrue();
-            assertThat(roster.rankOf(ayla)).contains(StaffRank.MOD);
+            assertThat(roster.rankOf(ALEX)).contains(StaffRank.ADMIN);
         }
 
         @Test
-        @DisplayName("one node can be taken away without changing the rank")
-        void takenOne(@TempDir Path folder) {
-            Grants grants = new Grants(folder);
-            StaffRoster roster = new StaffRoster(folder, grants);
-            roster.promote(ayla, StaffRank.MOD);
+        @DisplayName("loading reads everybody from the groups, so a restart loses nobody")
+        void load() {
+            roster.promote(ALEX, StaffRank.MOD);
+            roster.promote(BO, StaffRank.TESTER);
 
-            // MUTE, because it *is* part of a mod's preset — toggling something the preset does not
-            // grant would add it rather than take it away, which is the next test along.
-            assertThat(roster.toggle(ayla, ModerationPermission.MUTE.node())).isFalse();
+            StaffRoster again = new StaffRoster(groups);
+            again.load();
 
-            assertThat(grants.has(ayla, ModerationPermission.MUTE.node())).isFalse();
-            assertThat(roster.rankOf(ayla)).contains(StaffRank.MOD);
+            assertThat(again.rankOf(ALEX)).contains(StaffRank.MOD);
+            assertThat(again.departmentsOf(BO)).containsExactly(StaffRank.TESTER);
+            assertThat(again.everybody()).containsExactlyInAnyOrder(ALEX, BO);
         }
 
         @Test
-        @DisplayName("a toggle shows up as drift from the preset")
-        void drift(@TempDir Path folder) {
-            // What the screen puts on the button: "Moderator, and one extra". Without it, somebody
-            // hand-granted a node three months ago is indistinguishable from a plain moderator.
-            Grants grants = new Grants(folder);
-            StaffRoster roster = new StaffRoster(folder, grants);
-            roster.promote(ayla, StaffRank.MOD);
-
-            assertThat(roster.matchesPreset(ayla)).isTrue();
-            assertThat(roster.extraNodes(ayla)).isEmpty();
-            assertThat(roster.missingNodes(ayla)).isEmpty();
-
-            roster.toggle(ayla, ModerationPermission.BAN.node());
-
-            assertThat(roster.matchesPreset(ayla)).isFalse();
-            assertThat(roster.extraNodes(ayla)).containsExactly(ModerationPermission.BAN.node());
-            assertThat(roster.missingNodes(ayla)).isEmpty();
+        @DisplayName("seeding again never changes a group that is already there")
+        void seedingIsOnce() {
+            assertThat(groups.seed(StaffRank.MOD.seed())).isFalse();
         }
-
-        @Test
-        @DisplayName("a node taken away shows up as missing")
-        void missing(@TempDir Path folder) {
-            Grants grants = new Grants(folder);
-            StaffRoster roster = new StaffRoster(folder, grants);
-            roster.promote(ayla, StaffRank.MOD);
-
-            roster.toggle(ayla, ModerationPermission.MUTE.node());
-
-            assertThat(roster.missingNodes(ayla)).containsExactly(ModerationPermission.MUTE.node());
-            assertThat(roster.extraNodes(ayla)).isEmpty();
-        }
-
-        @Test
-        @DisplayName("re-applying the preset puts a drifted moderator back")
-        void reapplied(@TempDir Path folder) {
-            Grants grants = new Grants(folder);
-            StaffRoster roster = new StaffRoster(folder, grants);
-            roster.promote(ayla, StaffRank.MOD);
-            roster.toggle(ayla, ModerationPermission.BAN.node());
-
-            roster.reapplyPreset(ayla);
-
-            assertThat(roster.matchesPreset(ayla)).isTrue();
-            assertThat(grants.has(ayla, ModerationPermission.BAN.node())).isFalse();
-        }
-
-        @Test
-        @DisplayName("topping up from the preset never regrants a node taken away by hand")
-        void toppingUpNeverUndoesARevoke(@TempDir Path folder) {
-            Grants grants = new Grants(folder);
-            StaffRoster roster = new StaffRoster(folder, grants);
-            roster.promote(ayla, StaffRank.MOD);
-            roster.toggle(ayla, ModerationPermission.MUTE.node());
-
-            // The join top-up runs every single time they log in — unlike "put the preset back",
-            // which only ever runs when an admin asks for it.
-            boolean changed = roster.topUpFromPreset(ayla);
-
-            assertThat(changed)
-                    .as("nothing about the preset actually changed, so there was nothing to top up")
-                    .isFalse();
-            assertThat(grants.has(ayla, ModerationPermission.MUTE.node()))
-                    .as("an admin took this away on purpose; logging back in must not give it back")
-                    .isFalse();
-        }
-
-        @Test
-        @DisplayName("topping up still adds a node the preset gained after the promotion")
-        void toppingUpStillAddsWhatThePresetGained(@TempDir Path folder) {
-            Grants grants = new Grants(folder);
-            StaffRoster roster = new StaffRoster(folder, grants);
-            // Never toggled — this models a moderator promoted before MUTE was part of the preset,
-            // not an admin's deliberate choice, which is the one case topping up must still fix.
-            java.util.Set<String> beforeMuteExisted = new java.util.LinkedHashSet<>(StaffRank.MOD.nodes());
-            beforeMuteExisted.remove(ModerationPermission.MUTE.node());
-            roster.promote(ayla, StaffRank.MOD);
-            grants.set(ayla, beforeMuteExisted);
-
-            boolean changed = roster.topUpFromPreset(ayla);
-
-            assertThat(changed).isTrue();
-            assertThat(grants.has(ayla, ModerationPermission.MUTE.node())).isTrue();
-        }
-
-        @Test
-        @DisplayName("somebody who is not staff cannot be toggled")
-        void notStaff(@TempDir Path folder) {
-            // Otherwise a node lands on a player with no rank, and nothing in the GUI shows it.
-            Grants grants = new Grants(folder);
-            StaffRoster roster = new StaffRoster(folder, grants);
-
-            assertThat(roster.toggle(ayla, ModerationPermission.BAN.node())).isFalse();
-            assertThat(grants.has(ayla, ModerationPermission.BAN.node())).isFalse();
-        }
-
-        @Test
-        @DisplayName("a node no rank grants is refused, so nothing can be scattered by a typo")
-        void onlyGrantableNodes(@TempDir Path folder) {
-            Grants grants = new Grants(folder);
-            StaffRoster roster = new StaffRoster(folder, grants);
-            roster.promote(ayla, StaffRank.MOD);
-
-            assertThat(roster.toggle(ayla, "minecraft.command.op")).isFalse();
-            assertThat(grants.has(ayla, "minecraft.command.op")).isFalse();
-        }
-    }
-
-    @Nested
-    @DisplayName("across a restart")
-    class Persisting {
-
-        @Test
-        @DisplayName("the roster and the grants both survive")
-        void aRoundTrip(@TempDir Path folder) {
-            Grants grants = new Grants(folder);
-            StaffRoster first = new StaffRoster(folder, grants);
-            first.promote(ayla, StaffRank.MOD);
-            first.flush();
-            grants.flush();
-
-            Grants freshGrants = new Grants(folder);
-            freshGrants.load();
-            StaffRoster afterRestart = new StaffRoster(folder, freshGrants);
-            afterRestart.load();
-
-            assertThat(afterRestart.rankOf(ayla)).contains(StaffRank.MOD);
-            assertThat(freshGrants.has(ayla, ModerationPermission.TEMPBAN.node())).isTrue();
-        }
-
-        @Test
-        @DisplayName("a demotion does not come back")
-        void demotionPersists(@TempDir Path folder) {
-            Grants grants = new Grants(folder);
-            StaffRoster first = new StaffRoster(folder, grants);
-            first.promote(ayla, StaffRank.ADMIN);
-            first.flush();
-            first.demote(ayla);
-            first.flush();
-
-            StaffRoster afterRestart = new StaffRoster(folder, grants);
-            afterRestart.load();
-
-            assertThat(afterRestart.isStaff(ayla)).isFalse();
-        }
-
-        @Test
-        @DisplayName("nothing on disk is nobody staff rather than a failure")
-        void nothingYet(@TempDir Path folder) {
-            StaffRoster roster = rosterIn(folder);
-            roster.load();
-
-            assertThat(roster.size()).isZero();
-        }
-
-        @Test
-        @DisplayName("an unknown rank name is skipped rather than throwing the whole roster away")
-        void anUnknownRank(@TempDir Path folder) throws Exception {
-            StaffRoster first = rosterIn(folder);
-            first.promote(ayla, StaffRank.MOD);
-            first.flush();
-
-            String yaml = java.nio.file.Files.readString(first.file());
-            java.nio.file.Files.writeString(first.file(),
-                    yaml + System.lineSeparator() + "  " + bram + ": archduke" + System.lineSeparator());
-
-            StaffRoster afterRestart = rosterIn(folder);
-            afterRestart.load();
-
-            assertThat(afterRestart.isStaff(ayla)).isTrue();
-            assertThat(afterRestart.isStaff(bram)).isFalse();
-        }
-    }
-
-    @Test
-    @DisplayName("everybody of a rank can be listed, worst-first for a staff page")
-    void listing(@TempDir Path folder) {
-        StaffRoster roster = rosterIn(folder);
-        roster.promote(ayla, StaffRank.ADMIN);
-        roster.promote(bram, StaffRank.TRIAL_MOD);
-
-        assertThat(roster.everybody()).containsExactlyInAnyOrder(ayla, bram);
-        assertThat(roster.ofRank(StaffRank.ADMIN)).containsExactly(ayla);
-        assertThat(roster.ofRank(StaffRank.TRIAL_MOD)).containsExactly(bram);
-        assertThat(roster.size()).isEqualTo(2);
     }
 }

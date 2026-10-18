@@ -36,7 +36,7 @@ class PromotionRuleTest {
     PromotionRuleTest() {
         ranks.put(admin, StaffRank.ADMIN);
         ranks.put(mod, StaffRank.MOD);
-        ranks.put(trial, StaffRank.TRIAL_MOD);
+        ranks.put(trial, StaffRank.SUPPORT);
     }
 
     private PromotionRule rule() {
@@ -112,25 +112,25 @@ class PromotionRuleTest {
         }
 
         @Test
-        @DisplayName("a mod may appoint a trial mod and nothing more")
+        @DisplayName("a mod may appoint support and nothing more")
         void aModAppointsATrial() {
-            assertThat(rule().mayPromote(mod, player, StaffRank.TRIAL_MOD).isAllowed()).isTrue();
+            assertThat(rule().mayPromote(mod, player, StaffRank.SUPPORT).isAllowed()).isTrue();
             assertThat(rule().mayPromote(mod, player, StaffRank.MOD).isRefused()).isTrue();
-            assertThat(rule().highestTheyMayGive(mod)).contains(StaffRank.TRIAL_MOD);
+            assertThat(rule().highestTheyMayGive(mod)).contains(StaffRank.SUPPORT);
         }
 
         @Test
-        @DisplayName("a trial mod may appoint nobody, because there is nothing below them")
+        @DisplayName("support may appoint nobody, because there is nothing below them")
         void aTrialAppointsNobody() {
             assertThat(rule().highestTheyMayGive(trial)).isEmpty();
             assertThat(rule().mayHandOutAnything(trial)).isFalse();
-            assertThat(rule().mayPromote(trial, player, StaffRank.TRIAL_MOD).isRefused()).isTrue();
+            assertThat(rule().mayPromote(trial, player, StaffRank.SUPPORT).isRefused()).isTrue();
         }
 
         @Test
         @DisplayName("an ordinary player may appoint nobody")
         void aPlayerAppointsNobody() {
-            assertThat(rule().mayPromote(player, trial, StaffRank.TRIAL_MOD).refusal())
+            assertThat(rule().mayPromote(player, trial, StaffRank.SUPPORT).refusal())
                     .contains(PromotionRule.NOT_YOURS);
         }
     }
@@ -145,7 +145,7 @@ class PromotionRuleTest {
             UUID anotherMod = UUID.randomUUID();
             ranks.put(anotherMod, StaffRank.MOD);
 
-            assertThat(rule().mayPromote(mod, anotherMod, StaffRank.TRIAL_MOD).refusal())
+            assertThat(rule().mayPromote(mod, anotherMod, StaffRank.SUPPORT).refusal())
                     .contains(PromotionRule.NOT_ABOVE_YOU);
             assertThat(rule().mayDemote(mod, anotherMod).refusal())
                     .contains(PromotionRule.NOT_ABOVE_YOU);
@@ -155,7 +155,7 @@ class PromotionRuleTest {
         @DisplayName("a mod may not touch an admin")
         void notSomebodyAbove() {
             // Otherwise "promoting" an admin down to trial mod is a demotion wearing the other word.
-            assertThat(rule().mayPromote(mod, admin, StaffRank.TRIAL_MOD).refusal())
+            assertThat(rule().mayPromote(mod, admin, StaffRank.SUPPORT).refusal())
                     .contains(PromotionRule.NOT_ABOVE_YOU);
             assertThat(rule().mayDemote(mod, admin).refusal())
                     .contains(PromotionRule.NOT_ABOVE_YOU);
@@ -216,5 +216,42 @@ class PromotionRuleTest {
     @DisplayName("the rule says what it is about")
     void itDescribesItself() {
         assertThat(rule().describe()).isNotBlank();
+    }
+
+    @Nested
+    @DisplayName("the departments")
+    class Departments {
+
+        @Test
+        @DisplayName("an admin may hand out and take away a department")
+        void anAdmin() {
+            assertThat(rule().mayPromote(admin, player, StaffRank.BUILDER).isAllowed()).isTrue();
+            assertThat(rule().mayTakeAway(admin, mod, StaffRank.DEV).isAllowed()).isTrue();
+        }
+
+        @Test
+        @DisplayName("a mod may not, because a department is not a rung below them")
+        void notAMod() {
+            assertThat(rule().mayPromote(mod, player, StaffRank.BUILDER).refusal())
+                    .contains(PromotionRule.DEPARTMENTS_ARE_ADMINS);
+            assertThat(rule().mayTakeAway(mod, player, StaffRank.BUILDER).refusal())
+                    .contains(PromotionRule.DEPARTMENTS_ARE_ADMINS);
+        }
+
+        @Test
+        @DisplayName("nobody gives themselves a department, except the owner")
+        void notYourself() {
+            assertThat(rule().mayPromote(admin, admin, StaffRank.CREATOR).refusal())
+                    .contains(PromotionRule.YOURSELF);
+            assertThat(rule().mayPromote(owner, owner, StaffRank.CREATOR).isAllowed()).isTrue();
+        }
+
+        @Test
+        @DisplayName("taking away a rung follows the demotion rule")
+        void rungs() {
+            assertThat(rule().mayTakeAway(admin, mod, StaffRank.MOD).isAllowed()).isTrue();
+            assertThat(rule().mayTakeAway(mod, admin, StaffRank.ADMIN).refusal())
+                    .contains(PromotionRule.NOT_ABOVE_YOU);
+        }
     }
 }

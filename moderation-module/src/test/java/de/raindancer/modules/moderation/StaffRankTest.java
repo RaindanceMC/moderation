@@ -1,8 +1,8 @@
 package de.raindancer.modules.moderation;
 
+import de.raindancer.core.platform.permission.GroupSeed;
 import de.raindancer.modules.moderation.model.ModerationPermission;
 import de.raindancer.modules.moderation.model.StaffRank;
-import de.raindancer.modules.moderation.rules.StaffRule;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -14,258 +14,179 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * The four ranks: trial mod, mod, admin, owner.
- *
- * <h2>Why presets at all, when every node is toggleable anyway</h2>
- * Because "which of these nodes does a trial mod get?" is a question nobody should have to answer twice,
- * and the server that answers it afresh each time is the server where one trial can ban and another
- * cannot for no reason either of them knows. The preset is the answer written down once; the per-person
- * toggles are for the exception.
- *
- * <h2>The property the scheme rests on</h2>
- * Each rank contains the one below it. Not tidiness — it is what makes a promotion a promotion: a rank
- * missing something the rank under it had would silently take a power away, and the person who lost it
- * would report it as a bug in whatever they happened to be doing.
- *
- * <p>The owner is the exception, and deliberately: it adds no <em>nodes</em>, because an operator already
- * holds every permission of every plugin. Granting nodes on top would be a list in a file that changes
- * nothing, and the first person to read it would reasonably conclude that op does not include them.
+ * Staff ranks: the ladder support → mod → admin → owner, and the departments next to it (builder,
+ * creator, dev, tester). Each is a permission group; what is tested here is what the group starts with.
  */
 class StaffRankTest {
 
-    /** The three that are staff-by-permission. The owner is staff-by-being-the-server. */
-    private static final List<StaffRank> WORKING_RANKS =
-            List.of(StaffRank.TRIAL_MOD, StaffRank.MOD, StaffRank.ADMIN);
+    private static final List<StaffRank> WORKING_RANKS = List.of(StaffRank.SUPPORT, StaffRank.MOD, StaffRank.ADMIN);
+
+    private static List<String> seeded(GroupSeed seed) {
+        return seed.nodes().stream().map(GroupSeed.Node::permission).toList();
+    }
 
     @Nested
     @DisplayName("the ladder")
-    class TheLadder {
+    class Ladder {
 
         @Test
-        @DisplayName("there are four, in the order they are climbed")
-        void fourOfThem() {
-            assertThat(StaffRank.values())
-                    .containsExactly(StaffRank.TRIAL_MOD, StaffRank.MOD, StaffRank.ADMIN,
-                            StaffRank.OWNER);
+        @DisplayName("support, mod, admin, owner — in the order they are climbed")
+        void theLadder() {
+            assertThat(StaffRank.ladder())
+                    .containsExactly(StaffRank.SUPPORT, StaffRank.MOD, StaffRank.ADMIN, StaffRank.OWNER);
+            assertThat(StaffRank.ladder()).allMatch(StaffRank::onLadder);
         }
 
         @Test
-        @DisplayName("each rank contains everything the one below it has")
+        @DisplayName("each rank contains everything the one below it has, and more")
         void eachContainsTheLast() {
-            StaffRank[] ladder = StaffRank.values();
-            for (int rung = 1; rung < ladder.length; rung++) {
-                assertThat(ladder[rung].nodes())
-                        .as("%s should contain everything %s has", ladder[rung], ladder[rung - 1])
-                        .containsAll(ladder[rung - 1].nodes());
+            for (int i = 1; i < WORKING_RANKS.size(); i++) {
+                Set<String> below = WORKING_RANKS.get(i - 1).nodes();
+                Set<String> here = WORKING_RANKS.get(i).nodes();
+                assertThat(here).containsAll(below);
+                assertThat(here.size()).isGreaterThan(below.size());
             }
         }
 
         @Test
-        @DisplayName("each working rank is strictly bigger than the one below")
-        void eachIsBigger() {
-            // Two ranks with the same nodes are two names for one thing, and the difference between them
-            // is then whatever somebody imagines it to be. The owner is exempt: it is bigger in power
-            // without being bigger in nodes, which is what op *is*.
-            for (int rung = 1; rung < WORKING_RANKS.size(); rung++) {
-                assertThat(WORKING_RANKS.get(rung).nodes().size())
-                        .as("%s adds nothing to %s", WORKING_RANKS.get(rung),
-                                WORKING_RANKS.get(rung - 1))
-                        .isGreaterThan(WORKING_RANKS.get(rung - 1).nodes().size());
-            }
-        }
-
-        @Test
-        @DisplayName("they are ordered, so two can be compared")
-        void ordered() {
-            assertThat(StaffRank.TRIAL_MOD.weight()).isLessThan(StaffRank.MOD.weight());
-            assertThat(StaffRank.MOD.weight()).isLessThan(StaffRank.ADMIN.weight());
-            assertThat(StaffRank.ADMIN.weight()).isLessThan(StaffRank.OWNER.weight());
-
-            assertThat(StaffRank.ADMIN.isAtLeast(StaffRank.MOD)).isTrue();
-            assertThat(StaffRank.MOD.isAtLeast(StaffRank.ADMIN)).isFalse();
-            assertThat(StaffRank.MOD.isAtLeast(StaffRank.MOD)).isTrue();
-        }
-
-        @Test
-        @DisplayName("each one knows the rung above and below it")
+        @DisplayName("each knows the rung above and below it")
         void neighbours() {
-            // What a promotion and a demotion by one step are built on, and what decides which rank
-            // somebody may hand out.
-            assertThat(StaffRank.TRIAL_MOD.below()).isEmpty();
-            assertThat(StaffRank.TRIAL_MOD.above()).contains(StaffRank.MOD);
-            assertThat(StaffRank.MOD.below()).contains(StaffRank.TRIAL_MOD);
+            assertThat(StaffRank.SUPPORT.below()).isEmpty();
+            assertThat(StaffRank.MOD.below()).contains(StaffRank.SUPPORT);
+            assertThat(StaffRank.ADMIN.above()).contains(StaffRank.OWNER);
             assertThat(StaffRank.OWNER.above()).isEmpty();
-            assertThat(StaffRank.OWNER.below()).contains(StaffRank.ADMIN);
         }
 
         @Test
-        @DisplayName("every rank says what it is and what it is for")
-        void described() {
-            for (StaffRank rank : StaffRank.values()) {
-                assertThat(rank.title()).isNotBlank();
-                assertThat(rank.describe()).isNotBlank();
-                assertThat(rank.icon()).isNotNull();
-                assertThat(rank.colour()).isNotBlank();
-            }
+        @DisplayName("each group inherits the one below, and seeds only what it adds")
+        void groupsInherit() {
+            assertThat(StaffRank.SUPPORT.seed().parents()).isEmpty();
+            assertThat(StaffRank.MOD.seed().parents()).containsExactly("support");
+            assertThat(StaffRank.ADMIN.seed().parents()).containsExactly("mod");
+            assertThat(StaffRank.OWNER.seed().parents()).containsExactly("admin");
+            assertThat(seeded(StaffRank.MOD.seed())).doesNotContain(ModerationPermission.WARN.node())
+                    .contains(ModerationPermission.MUTE.node());
+        }
+
+        @Test
+        @DisplayName("higher ranks weigh more in LuckPerms")
+        void weights() {
+            assertThat(StaffRank.MOD.seed().weight()).isGreaterThan(StaffRank.SUPPORT.seed().weight());
+            assertThat(StaffRank.OWNER.seed().weight()).isGreaterThan(StaffRank.ADMIN.seed().weight());
         }
     }
 
     @Nested
     @DisplayName("what each rank may do")
-    class WhatTheyGet {
+    class Powers {
 
         @Test
-        @DisplayName("a trial mod can see everything and change almost nothing")
-        void aTrialCanRead() {
-            // Deliberately generous about reading: a trial who cannot see a record or a report cannot
-            // learn the job, and being useful while watched is the whole point of the rank.
-            Set<String> theirs = StaffRank.TRIAL_MOD.nodes();
-
-            assertThat(theirs).contains(ModerationPermission.WARN.node(),
-                    ModerationPermission.HISTORY.node(), ModerationPermission.STAFF_CHAT.node(),
-                    ModerationPermission.REPORTS.node(), ModerationPermission.INVSEE.node());
-
-            // Nothing that takes anything away from a player, and nothing that changes an inventory.
-            assertThat(theirs).doesNotContain(ModerationPermission.BAN.node(),
+        @DisplayName("support helps and warns, and stops nobody")
+        void support() {
+            assertThat(StaffRank.SUPPORT.nodes()).contains(
+                    ModerationPermission.WARN.node(), ModerationPermission.HISTORY.node(),
+                    ModerationPermission.STAFF_CHAT.node(), ModerationPermission.REPORTS.node());
+            assertThat(StaffRank.SUPPORT.nodes()).doesNotContain(
                     ModerationPermission.MUTE.node(), ModerationPermission.KICK.node(),
-                    ModerationPermission.INVSEE_EDIT.node());
+                    ModerationPermission.TEMPBAN.node(), ModerationPermission.INVSEE.node());
         }
 
         @Test
-        @DisplayName("a mod has the full working set")
-        void aModCanAct() {
-            Set<String> theirs = StaffRank.MOD.nodes();
-
-            assertThat(theirs).contains(ModerationPermission.TEMPBAN.node(),
-                    ModerationPermission.MUTE.node(), ModerationPermission.KICK.node(),
-                    ModerationPermission.FREEZE.node(), ModerationPermission.VANISH.node(),
-                    ModerationPermission.NOTES.node(), ModerationPermission.INVSEE_EDIT.node());
-
-            // A mod stops somebody *now*; ending their time on the server for good is an admin's.
-            assertThat(theirs)
-                    .as("a permanent ban is not a mod's decision — see BanLimitRule")
-                    .doesNotContain(ModerationPermission.BAN.node());
+        @DisplayName("a mod does the chat and the anticheat as well")
+        void modsDoChatAndAnticheat() {
+            assertThat(StaffRank.MOD.nodes()).contains(
+                    ModerationPermission.MUTE.node(), ModerationPermission.CHATLOG.node(),
+                    ModerationPermission.TEMPBAN.node(), StaffRank.ANTICHEAT_LOOK, StaffRank.ANTICHEAT_ALERTS,
+                    StaffRank.TELEPORT);
+            assertThat(StaffRank.MOD.nodes()).doesNotContain(StaffRank.ANTICHEAT_MANAGE);
         }
 
         @Test
-        @DisplayName("only an admin may change how moderation itself behaves")
-        void configIsAdminUpward() {
-            // Somebody who can set warns-before-ban to zero can undo the server's own policy, which is
-            // a different kind of power from handing out a punishment under it.
-            assertThat(StaffRank.ADMIN.nodes()).contains(ModerationPermission.CONFIG.node());
-            assertThat(StaffRank.MOD.nodes()).doesNotContain(ModerationPermission.CONFIG.node());
+        @DisplayName("only an admin changes the rules: config, permanent bans, the anticheat's checks")
+        void adminUpward() {
+            assertThat(StaffRank.MOD.nodes()).doesNotContain(ModerationPermission.CONFIG.node(),
+                    ModerationPermission.BAN.node());
+            assertThat(StaffRank.ADMIN.nodes()).contains(ModerationPermission.CONFIG.node(),
+                    ModerationPermission.BAN.node(), StaffRank.ANTICHEAT_MANAGE);
         }
 
         @Test
-        @DisplayName("no rank grants protection, at any tier")
-        void protectionIsNeverGranted() {
-            // A promotion used to confer it. That made the shield that stops one moderator acting on
-            // another something the moderators could hand to each other — so it is now written only by
-            // /protect at the console, and no tier here may put it back.
-            for (StaffRank rank : StaffRank.values()) {
-                assertThat(rank.nodes())
-                        .as("%s grants protection", rank)
-                        .noneMatch(node -> node.endsWith(".immune"));
-            }
-        }
-    }
-
-    @Nested
-    @DisplayName("the owner")
-    class Owner {
-
-        @Test
-        @DisplayName("the owner is the only rank that is an operator")
-        void onlyTheOwnerIsOp() {
+        @DisplayName("the owner is an operator and adds no nodes")
+        void owner() {
             assertThat(StaffRank.OWNER.isOperator()).isTrue();
-            for (StaffRank rank : WORKING_RANKS) {
-                assertThat(rank.isOperator())
-                        .as("%s must not be an operator — op is every permission of every plugin", rank)
-                        .isFalse();
-            }
+            assertThat(StaffRank.values()).filteredOn(StaffRank::isOperator).containsExactly(StaffRank.OWNER);
+            assertThat(seeded(StaffRank.OWNER.seed())).isEmpty();
         }
 
         @Test
-        @DisplayName("the owner adds no nodes, because an operator already holds everything")
-        void theOwnerAddsNoNodes() {
-            assertThat(StaffRank.OWNER.nodes())
-                    .as("a node list on top of op is a list that changes nothing, and reads as though "
-                            + "op did not include it")
-                    .isEqualTo(StaffRank.ADMIN.nodes());
-        }
-    }
-
-    @Nested
-    @DisplayName("the claims half")
-    class Claims {
-
-        @Test
-        @DisplayName("a mod can act on claims while moderating")
-        void modsGetClaimAdmin() {
-            assertThat(StaffRank.MOD.nodes()).contains(StaffRank.CLAIM_ADMIN);
-            assertThat(StaffRank.TRIAL_MOD.nodes()).doesNotContain(StaffRank.CLAIM_ADMIN);
+        @DisplayName("claims: a mod administrates, the bypasses arrive with admin")
+        void claims() {
+            assertThat(StaffRank.MOD.nodes()).contains(StaffRank.CLAIM_ADMIN)
+                    .doesNotContainAnyElementsOf(StaffRank.CLAIM_BYPASSES);
+            assertThat(StaffRank.ADMIN.nodes()).containsAll(StaffRank.CLAIM_BYPASSES);
         }
 
         @Test
-        @DisplayName("the bypasses arrive with admin, not before")
-        void bypassesAreAdminUpward() {
-            // A mod with free unlimited claims is a mod whose own building is invisible to the rules
-            // everybody else plays under — and the first thing a player notices when they find out.
-            for (String bypass : StaffRank.CLAIM_BYPASSES) {
-                assertThat(StaffRank.ADMIN.nodes())
-                        .as("an admin should have %s", bypass)
-                        .contains(bypass);
-                assertThat(StaffRank.MOD.nodes())
-                        .as("a mod should not have %s", bypass)
-                        .doesNotContain(bypass);
-            }
-        }
-
-        @Test
-        @DisplayName("nobody is granted the ability to use claims, because everybody already can")
-        void noPointlessGrants() {
-            for (StaffRank rank : StaffRank.values()) {
-                assertThat(rank.nodes()).doesNotContain("rec.use");
-            }
-        }
-    }
-
-    @Nested
-    @DisplayName("the Hunger Games half")
-    class HungerGames {
-
-        @Test
-        @DisplayName("a mod can run a round, a trial mod cannot")
-        void modsAreGamemasters() {
-            assertThat(StaffRank.MOD.nodes()).contains(StaffRank.HUNGERGAMES_GAMEMASTER);
-            assertThat(StaffRank.TRIAL_MOD.nodes())
-                    .as("releasing forty people from their platforms is not something to be learning on, "
-                            + "and it cannot be taken back in front of an audience")
-                    .doesNotContain(StaffRank.HUNGERGAMES_GAMEMASTER);
-        }
-
-        @Test
-        @DisplayName("the arena and the loot arrive with admin, not before")
-        void adminOwnsTheTournament() {
-            assertThat(StaffRank.ADMIN.nodes()).contains(StaffRank.HUNGERGAMES_ADMIN);
-            assertThat(StaffRank.MOD.nodes())
-                    .as("a guest gamemaster brought in for one evening must not be able to regenerate the "
-                            + "arena mid-round — that separation is the whole reason the module has two "
-                            + "nodes rather than one, and a rank granting both would collapse it")
+        @DisplayName("the Hunger Games: a mod runs a round, an admin owns the tournament")
+        void hungerGames() {
+            assertThat(StaffRank.SUPPORT.nodes()).doesNotContain(StaffRank.HUNGERGAMES_GAMEMASTER);
+            assertThat(StaffRank.MOD.nodes()).contains(StaffRank.HUNGERGAMES_GAMEMASTER)
                     .doesNotContain(StaffRank.HUNGERGAMES_ADMIN);
+            assertThat(StaffRank.ADMIN.nodes()).contains(StaffRank.HUNGERGAMES_ADMIN);
         }
 
         @Test
-        @DisplayName("no rank grants the protection bypass")
-        void theBypassIsNeverARankPerk() {
-            // Its own class note in the hungergames module: meant for the ten minutes somebody is fixing
-            // something. An admin holding it permanently is one who eventually mines the cornucopia by
-            // accident while everybody watches. Granted by hand on the permissions screen or not at all.
+        @DisplayName("no rank grants a protection bypass")
+        void noProtectionBypass() {
             for (StaffRank rank : StaffRank.values()) {
-                assertThat(rank.nodes())
-                        .as("%s must not carry the arena protection bypass", rank)
-                        .doesNotContain("hungergames.protection.bypass");
+                assertThat(rank.nodes()).doesNotContain("hungergames.protection.bypass");
             }
+        }
+    }
+
+    @Nested
+    @DisplayName("the departments")
+    class Departments {
+
+        @Test
+        @DisplayName("builder, creator, dev and tester stand next to the ladder, not on it")
+        void offTheLadder() {
+            assertThat(StaffRank.departments())
+                    .containsExactly(StaffRank.BUILDER, StaffRank.CREATOR, StaffRank.DEV, StaffRank.TESTER);
+            for (StaffRank department : StaffRank.departments()) {
+                assertThat(department.onLadder()).isFalse();
+                assertThat(department.below()).isEmpty();
+                assertThat(department.above()).isEmpty();
+                assertThat(department.seed().parents()).isEmpty();
+                assertThat(department.isAtLeast(StaffRank.SUPPORT)).isFalse();
+            }
+        }
+
+        @Test
+        @DisplayName("none of them can punish anybody")
+        void noPunishment() {
+            for (StaffRank department : StaffRank.departments()) {
+                assertThat(department.nodes()).doesNotContain(ModerationPermission.WARN.node(),
+                        ModerationPermission.MUTE.node(), ModerationPermission.KICK.node(),
+                        ModerationPermission.TEMPBAN.node(), ModerationPermission.BAN.node());
+            }
+        }
+
+        @Test
+        @DisplayName("a builder's world tools only apply in the build world")
+        void builderTools() {
+            GroupSeed seed = StaffRank.BUILDER.seed();
+            assertThat(seed.nodes()).anySatisfy(node -> {
+                assertThat(node.permission()).isEqualTo("minecraft.command.gamemode");
+                assertThat(node.context()).containsEntry("world", StaffRank.BUILD_WORLD);
+            });
+            assertThat(StaffRank.BUILDER.nodes()).doesNotContain("minecraft.command.gamemode");
+        }
+
+        @Test
+        @DisplayName("a dev gets the performance tools and maintenance")
+        void dev() {
+            assertThat(StaffRank.DEV.nodes()).contains("rainsperformance.inspect", "rainscore.maintenance");
         }
     }
 
@@ -277,96 +198,46 @@ class StaffRankTest {
         @DisplayName("a rank can be named however it is typed")
         void byName() {
             assertThat(StaffRank.byName("mod")).contains(StaffRank.MOD);
-            assertThat(StaffRank.byName("MOD")).contains(StaffRank.MOD);
             assertThat(StaffRank.byName("  Admin ")).contains(StaffRank.ADMIN);
-            assertThat(StaffRank.byName("trial_mod")).contains(StaffRank.TRIAL_MOD);
+            assertThat(StaffRank.byName("support")).contains(StaffRank.SUPPORT);
+            assertThat(StaffRank.byName("builder")).contains(StaffRank.BUILDER);
             assertThat(StaffRank.byName("nonsense")).isEmpty();
             assertThat(StaffRank.byName(null)).isEmpty();
-            assertThat(StaffRank.byName("")).isEmpty();
         }
 
         @Test
-        @DisplayName("the words people actually type are understood too")
+        @DisplayName("the words people type, and the old trial rank, are understood")
         void theWordsPeopleUse() {
-            // Nobody types an underscore, and "op" is what the top rank is called in practice even
-            // though it is the owner.
-            assertThat(StaffRank.byName("trial")).contains(StaffRank.TRIAL_MOD);
-            assertThat(StaffRank.byName("trialmod")).contains(StaffRank.TRIAL_MOD);
-            assertThat(StaffRank.byName("trial mod")).contains(StaffRank.TRIAL_MOD);
-            assertThat(StaffRank.byName("trial-mod")).contains(StaffRank.TRIAL_MOD);
+            assertThat(StaffRank.byName("trial_mod")).contains(StaffRank.SUPPORT);
+            assertThat(StaffRank.byName("trial")).contains(StaffRank.SUPPORT);
+            assertThat(StaffRank.byName("helper")).contains(StaffRank.SUPPORT);
             assertThat(StaffRank.byName("moderator")).contains(StaffRank.MOD);
+            assertThat(StaffRank.byName("developer")).contains(StaffRank.DEV);
             assertThat(StaffRank.byName("op")).contains(StaffRank.OWNER);
-            assertThat(StaffRank.byName("owner")).contains(StaffRank.OWNER);
         }
 
         @Test
-        @DisplayName("the names are what somebody would type, for tab completion")
+        @DisplayName("the names are what somebody would type, ladder first")
         void names() {
             assertThat(new ArrayList<>(StaffRank.names()))
-                    .containsExactly("trial_mod", "mod", "admin", "owner");
+                    .containsExactly("support", "mod", "admin", "owner", "builder", "creator", "dev", "tester");
+        }
+
+        @Test
+        @DisplayName("each rank's group is named like the rank")
+        void groupNames() {
+            for (StaffRank rank : StaffRank.values()) {
+                assertThat(rank.group()).isEqualTo(rank.key());
+                assertThat(rank.seed().name()).isEqualTo(rank.group());
+            }
         }
     }
 
     @Test
-    @DisplayName("no node is granted twice within one rank")
+    @DisplayName("no node is seeded twice within one group")
     void noDuplicates() {
         for (StaffRank rank : StaffRank.values()) {
-            assertThat(rank.nodes()).doesNotHaveDuplicates();
-        }
-    }
-
-    @Test
-    @DisplayName("the set handed out cannot be changed by whoever reads it")
-    void nodesAreImmutable() {
-        assertThat(StaffRank.MOD.nodes()).isUnmodifiable();
-    }
-
-    /**
-     * The bug this guards against: the permissions screen offering to toggle a node for a module that
-     * is not on this server. Moderation does not depend on claims, warps, homes, tpa or the hungergames
-     * module — see the nodes' own class comments — so {@code nodes()}/{@code everyGrantableNode()} carry
-     * every one of them regardless of what is actually installed, on purpose, for the promotion grant.
-     * The screen needs the narrower, live answer instead.
-     */
-    @Nested
-    @DisplayName("the nodes a server can actually act on")
-    class GrantableHere {
-
-        @Test
-        @DisplayName("with no server to ask, every grantable node is answered, foreign ones included")
-        void withNoServerEverythingIsAnswered() {
-            assertThat(StaffRank.grantableNodesOn(null))
-                    .isEqualTo(StaffRank.everyGrantableNode());
-        }
-
-        @Test
-        @DisplayName("a node no module has registered on this server is left out")
-        void leavesOutWhatNoModuleRegistered() {
-            org.bukkit.Server server = org.mockito.Mockito.mock(org.bukkit.Server.class);
-            org.bukkit.plugin.PluginManager pluginManager =
-                    org.mockito.Mockito.mock(org.bukkit.plugin.PluginManager.class);
-            org.mockito.Mockito.when(server.getPluginManager()).thenReturn(pluginManager);
-            // Nothing has registered rec.admin on this server — claims is not installed here.
-            org.mockito.Mockito.when(pluginManager.getPermission(org.mockito.ArgumentMatchers.anyString()))
-                    .thenReturn(null);
-
-            assertThat(StaffRank.grantableNodesOn(server)).isEmpty();
-        }
-
-        @Test
-        @DisplayName("a node this server has actually registered is offered")
-        void offersWhatIsActuallyRegistered() {
-            org.bukkit.Server server = org.mockito.Mockito.mock(org.bukkit.Server.class);
-            org.bukkit.plugin.PluginManager pluginManager =
-                    org.mockito.Mockito.mock(org.bukkit.plugin.PluginManager.class);
-            org.mockito.Mockito.when(server.getPluginManager()).thenReturn(pluginManager);
-            // Homes is installed here and registered its own node; claims is not and did not.
-            org.mockito.Mockito.when(pluginManager.getPermission(StaffRank.HOMES_UNLIMITED))
-                    .thenReturn(new org.bukkit.permissions.Permission(StaffRank.HOMES_UNLIMITED));
-
-            assertThat(StaffRank.grantableNodesOn(server))
-                    .contains(StaffRank.HOMES_UNLIMITED)
-                    .doesNotContain(StaffRank.CLAIM_ADMIN);
+            assertThat(rank.seed().nodes()).doesNotHaveDuplicates();
         }
     }
 }

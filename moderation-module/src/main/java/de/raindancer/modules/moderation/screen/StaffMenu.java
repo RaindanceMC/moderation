@@ -76,9 +76,11 @@ public final class StaffMenu extends ModerationList<StaffMenu.OnShift> {
     @Override
     protected ItemStack icon(OnShift who) {
         List<String> lore = new ArrayList<>();
-        services().roster().rankOf(who.id()).ifPresentOrElse(
-                rank -> lore.add("<" + rank.colour() + ">" + rank.title()),
-                () -> lore.add("<dark_gray>No rank — permissions from somewhere else."));
+        var ranks = services().roster().ranksOf(who.id());
+        if (ranks.isEmpty()) {
+            lore.add("<dark_gray>No rank — permissions from somewhere else.");
+        }
+        ranks.stream().sorted().forEach(rank -> lore.add("<" + rank.colour() + ">" + rank.title()));
         if (who.server() != null) {
             lore.add("<gray>On <white>" + MINI.escapeTags(who.server()) + "</white>.");
         }

@@ -231,9 +231,9 @@ class BanLimitRuleTest {
         }
 
         @Test
-        @DisplayName("a trial mod is given neither")
+        @DisplayName("support is given neither")
         void aTrialsNodes() {
-            assertThat(StaffRank.TRIAL_MOD.nodes())
+            assertThat(StaffRank.SUPPORT.nodes())
                     .doesNotContain(ModerationPermission.TEMPBAN.node(),
                             ModerationPermission.BAN.node());
         }

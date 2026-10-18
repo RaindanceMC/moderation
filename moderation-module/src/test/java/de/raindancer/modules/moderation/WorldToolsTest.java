@@ -47,9 +47,9 @@ class WorldToolsTest {
     }
 
     @Test
-    @DisplayName("a trial mod gets neither")
+    @DisplayName("support gets neither")
     void trialsGetNothing() {
-        assertThat(StaffRank.TRIAL_MOD.nodes())
+        assertThat(StaffRank.SUPPORT.nodes())
                 .doesNotContain(ModerationPermission.SPAWN_ORE.node(),
                         ModerationPermission.SPAWN_MOBS.node());
     }

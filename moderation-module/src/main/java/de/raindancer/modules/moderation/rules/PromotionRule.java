@@ -32,6 +32,7 @@ public final class PromotionRule implements IModerationRule {
     public static final String NOT_ABOVE_YOU = "moderation.rank.not-above-you";
     public static final String YOURSELF = "moderation.rank.yourself";
     public static final String HANDING_OUT_IS_OFF = "moderation.rank.handing-out-is-off";
+    public static final String DEPARTMENTS_ARE_ADMINS = "moderation.rank.departments-are-admins";
 
     /** Whether somebody holds the owner's promote node — or is the console. */
     @FunctionalInterface
@@ -63,7 +64,7 @@ public final class PromotionRule implements IModerationRule {
     /** The highest rank this person may hand out, if any. */
     public Optional<StaffRank> highestTheyMayGive(UUID actor) {
         if (owner.holdsIt(actor)) {
-            return Optional.of(StaffRank.values()[StaffRank.values().length - 1]);
+            return Optional.of(StaffRank.OWNER);
         }
         if (!promotingBelowIsAllowed) {
             return Optional.empty();
@@ -96,6 +97,9 @@ public final class PromotionRule implements IModerationRule {
         Optional<StaffRank> theirs = ranks.of(actor);
         if (theirs.isEmpty()) {
             return Verdict.refused(NOT_YOURS);
+        }
+        if (wanted != null && !wanted.onLadder()) {
+            return departmentsAllowed(theirs.get());
         }
         Optional<StaffRank> most = theirs.get().below();
         if (most.isEmpty() || wanted == null || wanted.weight() > most.get().weight()) {
@@ -131,6 +135,30 @@ public final class PromotionRule implements IModerationRule {
      * <p>Only on somebody strictly below them. An equal is the case that matters: a moderation team
      * where any member can remove any other is one bad evening away from having no members.
      */
+    /**
+     * Taking one rank away. A rung follows {@link #mayDemote}; a department is an admin's to take, from
+     * anybody but themselves — it is a job, not a rung, so "below you" does not apply.
+     */
+    public Verdict mayTakeAway(UUID actor, UUID subject, StaffRank rank) {
+        if (rank == null || rank.onLadder()) {
+            return mayDemote(actor, subject);
+        }
+        if (owner.holdsIt(actor)) {
+            return Verdict.allowed();
+        }
+        if (actor != null && actor.equals(subject)) {
+            return Verdict.refused(YOURSELF);
+        }
+        if (!demotingBelowIsAllowed) {
+            return Verdict.refused(HANDING_OUT_IS_OFF);
+        }
+        return ranks.of(actor).map(this::departmentsAllowed).orElse(Verdict.refused(NOT_YOURS));
+    }
+
+    private Verdict departmentsAllowed(StaffRank mine) {
+        return mine.isAtLeast(StaffRank.ADMIN) ? Verdict.allowed() : Verdict.refused(DEPARTMENTS_ARE_ADMINS);
+    }
+
     private Verdict actingOnIsAllowed(StaffRank mine, UUID subject) {
         Optional<StaffRank> theirs = ranks.of(subject);
         if (theirs.isEmpty()) {
@@ -144,7 +172,7 @@ public final class PromotionRule implements IModerationRule {
 
     @Override
     public String describe() {
-        return "who may hand out which rank: the owner anything, everybody else the rank below their "
-                + "own and only to somebody below them";
+        return "who may hand out which rank: the owner anything, everybody else the rung below their "
+                + "own and only to somebody below them; departments from admin upward";
     }
 }

@@ -84,9 +84,8 @@ public final class StaffService implements IModerationService {
     }
 
     /**
-     * Makes somebody staff at this rank, and tells everybody who should know.
-     *
-     * @return whether anything changed
+     * A rung replaces their rung; a department is added on top of what they hold. Blocks on the
+     * permission groups — never on the server thread.
      */
     public boolean promote(CommandSender by, UUID who, String name, StaffRank rank) {
         StaffRank before = roster.rankOf(who).orElse(null);
@@ -94,12 +93,20 @@ public final class StaffService implements IModerationService {
             return false;
         }
         applyNow(who);
-        persist();
-
+        if (!rank.onLadder()) {
+            record("add-department", by, who, name, rank.title(), null);
+            messages().send(by, "moderation.rank.added", "player", name, "rank", rank.title(),
+                    "colour", rank.colour());
+            tellThem(who, "moderation.rank.you-also-are", "rank", rank.title(),
+                    "colour", rank.colour(), "what", rank.describe());
+            tellTheStaff("<white><player></white> is now also <" + rank.colour() + "><rank></"
+                            + rank.colour() + "> <gray>(by <white><by></white>)",
+                    Map.of("player", String.valueOf(name), "rank", rank.title(), "by", nameOf(by)));
+            return true;
+        }
         boolean up = before == null || rank.isAtLeast(before);
         record(up ? "promote" : "demote", by, who, name, rank.title(),
                 before == null ? "not staff" : before.title());
-
         messages().send(by, "moderation.rank.changed", "player", name, "rank", rank.title(),
                 "colour", rank.colour());
         tellThem(who, "moderation.rank.you-are-now", "rank", rank.title(),
@@ -110,19 +117,28 @@ public final class StaffService implements IModerationService {
         return true;
     }
 
-    /**
-     * Takes the rank and every node with it.
-     *
-     * @return whether they were staff at all
-     */
+    /** Takes one rank away — a department, or their rung (which leaves them without one). */
+    public boolean takeAway(CommandSender by, UUID who, String name, StaffRank rank) {
+        if (!roster.takeAway(who, rank)) {
+            return false;
+        }
+        applyNow(who);
+        record(rank.onLadder() ? "demote" : "remove-department", by, who, name,
+                roster.rankOf(who).map(StaffRank::title).orElse("not staff"), rank.title());
+        messages().send(by, "moderation.rank.taken", "player", name, "rank", rank.title());
+        tellThem(who, "moderation.rank.you-no-longer-are", "rank", rank.title());
+        tellTheStaff("<white><player></white> is no longer <rank> <gray>(by <white><by></white>)",
+                Map.of("player", String.valueOf(name), "rank", rank.title(), "by", nameOf(by)));
+        return true;
+    }
+
+    /** Off the staff entirely: every staff group. */
     public boolean demote(CommandSender by, UUID who, String name) {
         StaffRank before = roster.rankOf(who).orElse(null);
         if (!roster.demote(who)) {
             return false;
         }
         applyNow(who);
-        persist();
-
         record("demote", by, who, name, "not staff", before == null ? "not staff" : before.title());
         messages().send(by, "moderation.rank.removed", "player", name);
         tellThem(who, "moderation.rank.you-are-no-longer");
@@ -131,74 +147,6 @@ public final class StaffService implements IModerationService {
         return true;
     }
 
-    /**
-     * Turns one node on or off, leaving the rank alone.
-     *
-     * @return whether they now hold it
-     */
-    public boolean toggle(CommandSender by, UUID who, String name, String node) {
-        boolean holdsItNow = roster.toggle(who, node);
-        applyNow(who);
-        persist();
-
-        record(holdsItNow ? "grant" : "revoke", by, who, name, node,
-                roster.rankOf(who).map(StaffRank::title).orElse("not staff"));
-        return holdsItNow;
-    }
-
-    /** Puts a drifted person back to exactly what their rank grants. */
-    /**
-     * Puts a rank's grants back on somebody as they join, silently.
-     *
-     * <h2>Why this has to happen at all</h2>
-     * A rank hands out its nodes at the moment somebody is promoted. That is right — a grant is a
-     * thing that happened, and re-deciding it on every join would undo the per-person permissions an
-     * admin turned off by hand.
-     *
-     * <p>But it means a node <em>added to a preset afterwards</em> reaches nobody. Everybody promoted
-     * before it existed keeps the set they were given, for ever, and the only cure is promoting each
-     * of them again — which nobody thinks to do, because nothing is visibly wrong: the rank says Admin
-     * and the command says no.
-     *
-     * <p>This is the half that heals: on join, whatever the preset says now is granted. Only granted —
-     * nothing is taken away, so a permission somebody was given by hand survives, and one an admin
-     * switched off stays off unless the preset itself changed.
-     *
-     * @return whether anything was actually new
-     */
-    public boolean topUpOnJoin(UUID who) {
-        if (who == null || roster.rankOf(who).isEmpty()) {
-            return false;
-        }
-        boolean changed = roster.topUpFromPreset(who);
-        // Applied whether or not the roster changed: the roster is what they *should* hold, and the
-        // permission plugin is what they *do*. Those come apart on their own — a LuckPerms edit, a
-        // restore from backup — and this is the one moment both are in the same place.
-        applyNow(who);
-        if (changed) {
-            persist();
-        }
-        return changed;
-    }
-
-    public boolean reapplyPreset(CommandSender by, UUID who, String name) {
-        if (!roster.reapplyPreset(who)) {
-            return false;
-        }
-        applyNow(who);
-        persist();
-        record("reapply-preset", by, who, name,
-                roster.rankOf(who).map(StaffRank::title).orElse("not staff"), null);
-        return true;
-    }
-
-    /**
-     * Writes down that somebody switched a tool on or off.
-     *
-     * <p>Audited even when it is somebody using it on themselves, and that is the interesting case: an
-     * invincible moderator standing in the middle of a fight is a fair question afterwards, and "was
-     * anybody in god mode at the time" is exactly the sort of thing nobody can answer from memory.
-     */
     public void recordSelfTool(CommandSender by, UUID who, String name,
                                de.raindancer.modules.moderation.command.SelfToolCommand.Tool tool,
                                boolean nowOn) {
@@ -233,7 +181,7 @@ public final class StaffService implements IModerationService {
         return roster;
     }
 
-    /** What somebody has been granted, for the per-person toggle screen. */
+    /** Whether they hold a node through Core's grants. */
     public boolean has(UUID who, String node) {
         return grants.has(who, node);
     }
@@ -248,33 +196,12 @@ public final class StaffService implements IModerationService {
      * a demotion: somebody who keeps a power they were just told they no longer have.
      */
     private void applyNow(UUID who) {
-        Player here = server.getPlayer(who);
-        if (here != null) {
-            reapply.accept(here);
-        }
-        applyOpPolicy(who);
+        // The permissions themselves follow on their own: LuckPerms recalculates, and Core's grants
+        // re-apply on the player's thread. What is left is the op policy, which is the server's.
+        Scheduling.global(plugin, () -> applyOpPolicy(who));
     }
 
-    /**
-     * The one place in this module that ops anybody, and the only one that may be.
-     *
-     * <h2>Why staff are not op</h2>
-     * Op is not a permission — it is <em>every</em> permission, of every plugin on the server, plus the
-     * vanilla commands: {@code /stop}, {@code /gamerule}, and {@code /op} itself. A moderator who is op
-     * can promote themselves to admin, and an admin who is op can switch off the setting that limits
-     * them. So the tiers grant nodes, and nothing below {@link StaffRank#ADMIN} is ever opped at all.
-     *
-     * <p>{@link ModerationSettings#adminsAreOp()} exists because some owners genuinely run their admins
-     * as co-owners, and telling them to edit {@code ops.json} by hand would be pretending this module
-     * does not know about the question. It is <b>off</b>, so the decision is made deliberately rather
-     * than inherited.
-     *
-     * <h2>Why it takes op away as well as gives it</h2>
-     * An admin demoted to moderator who stays op is somebody who kept every power the demotion was
-     * about — and the demotion looked like it worked. The one op this module did not grant, it also
-     * never removes: see below.
-     */
-    private void applyOpPolicy(UUID who) {
+    public void applyOpPolicy(UUID who) {
         if (!settings.adminsAreOp()) {
             // With the setting off, this module has no opinion about op at all — it grants nodes and
             // nothing else. Returning here rather than falling through to the check below is not a
@@ -310,13 +237,6 @@ public final class StaffService implements IModerationService {
 
 
     /** Both files, off the server thread. Neither is large and both matter after a crash. */
-    private void persist() {
-        Scheduling.async(plugin, () -> {
-            roster.flush();
-            grants.flush();
-        });
-    }
-
     private void tellThem(UUID who, String key, Object... values) {
         Player here = server.getPlayer(who);
         if (here != null) {
@@ -364,7 +284,6 @@ public final class StaffService implements IModerationService {
 
     @Override
     public String describe() {
-        return "promoting, demoting and toggling a single permission — the roster, the grants and the "
-                + "record of who did it";
+        return "promoting and demoting staff — the staff groups, and the record of who did it";
     }
 }

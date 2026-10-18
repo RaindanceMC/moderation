@@ -1,5 +1,6 @@
 package de.raindancer.modules.moderation.command;
 
+import de.raindancer.core.platform.util.Scheduling;
 import de.raindancer.modules.moderation.ModerationServices;
 import de.raindancer.modules.moderation.model.StaffRank;
 import de.raindancer.modules.moderation.util.Players;
@@ -7,9 +8,13 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
@@ -36,7 +41,7 @@ public final class DemoteCommand implements IModerationCommand {
 
     @Override
     public String describe() {
-        return "takes somebody down a rank, or off the staff";
+        return "takes somebody down a rung, one rank away, or off the staff";
     }
 
     @Override
@@ -55,10 +60,9 @@ public final class DemoteCommand implements IModerationCommand {
     public void execute(CommandSourceStack source, String[] args) {
         CommandSender sender = source.getSender();
         ModerationServices moderation = services.get();
-
         if (args.length == 0) {
             moderation.messages().send(sender, "moderation.usage",
-                    "usage", "/demote <player> [" + OFF_ENTIRELY + "]");
+                    "usage", "/demote <player> [" + OFF_ENTIRELY + "|<rank>]");
             return;
         }
         Optional<OfflinePlayer> found = Players.one(moderation.messages(), moderation.server(), sender, args[0]);
@@ -66,33 +70,44 @@ public final class DemoteCommand implements IModerationCommand {
             return;
         }
         OfflinePlayer them = found.get();
+        UUID who = them.getUniqueId();
         String name = Players.nameOf(them);
-
-        Optional<StaffRank> current = moderation.roster().rankOf(them.getUniqueId());
-        if (current.isEmpty()) {
+        UUID actor = sender instanceof org.bukkit.entity.Player player ? player.getUniqueId() : null;
+        Set<StaffRank> held = moderation.roster().ranksOf(who);
+        if (held.isEmpty()) {
             moderation.messages().send(sender, "moderation.rank.not-staff", "player", name);
             return;
         }
-        // The same rule as promoting, in reverse: only somebody strictly below you, and only if the
-        // server has left demoting-below switched on.
-        var allowed = moderation.promotionRule().mayDemote(
-                sender instanceof org.bukkit.entity.Player player ? player.getUniqueId() : null,
-                them.getUniqueId());
+        boolean offEntirely = args.length > 1 && OFF_ENTIRELY.startsWith(args[1].toLowerCase(Locale.ROOT));
+        Optional<StaffRank> named = args.length > 1 && !offEntirely ? StaffRank.byName(args[1]) : Optional.empty();
+        if (args.length > 1 && !offEntirely && named.isEmpty()) {
+            moderation.messages().send(sender, "moderation.rank.unknown", "word", args[1],
+                    "ranks", String.join(", ", StaffRank.names()));
+            return;
+        }
+        if (named.isPresent() && !held.contains(named.get())) {
+            moderation.messages().send(sender, "moderation.rank.not-that-rank", "player", name,
+                    "rank", named.get().title());
+            return;
+        }
+        var allowed = named.isPresent()
+                ? moderation.promotionRule().mayTakeAway(actor, who, named.get())
+                : moderation.promotionRule().mayDemote(actor, who);
         if (allowed.isRefused()) {
             allowed.refusal().ifPresent(key -> moderation.messages().send(sender, key,
                     "rank", allowed.detail() == null ? "" : allowed.detail(), "player", name));
             return;
         }
-        boolean offEntirely = args.length > 1
-                && args[1].toLowerCase(java.util.Locale.ROOT).startsWith("n");
-
-        if (offEntirely || current.get().ordinal() == 0) {
-            // Already on the bottom rung: down from there is off, which is the only thing left to mean.
-            moderation.staff().demote(sender, them.getUniqueId(), name);
-            return;
-        }
-        moderation.staff().promote(sender, them.getUniqueId(), name,
-                StaffRank.values()[current.get().ordinal() - 1]);
+        Optional<StaffRank> rung = moderation.roster().rankOf(who);
+        Scheduling.async(moderation.plugin(), () -> {
+            if (named.isPresent()) {
+                moderation.staff().takeAway(sender, who, name, named.get());
+            } else if (offEntirely || rung.flatMap(StaffRank::below).isEmpty()) {
+                moderation.staff().demote(sender, who, name);
+            } else {
+                moderation.staff().promote(sender, who, name, rung.get().below().get());
+            }
+        });
     }
 
     @Override
@@ -100,6 +115,13 @@ public final class DemoteCommand implements IModerationCommand {
         if (args.length <= 1) {
             return Players.suggest(services.get().server(), source.getSender(), args.length == 1 ? args[0] : "");
         }
-        return args.length == 2 ? List.of(OFF_ENTIRELY) : List.of();
+        if (args.length == 2) {
+            List<String> options = new ArrayList<>();
+            options.add(OFF_ENTIRELY);
+            options.addAll(StaffRank.names());
+            options.removeIf(option -> !option.startsWith(args[1].toLowerCase(Locale.ROOT)));
+            return options;
+        }
+        return List.of();
     }
 }

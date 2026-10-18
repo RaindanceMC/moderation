@@ -77,8 +77,8 @@ public final class PlayerPracticalMenu extends PlayerScreen {
         // Drawn for everybody, greyed for anybody but the owner: ranks exist, and are not theirs to give.
         band(MenuLayout.LAND, 5, viewer.isOp()
                         || viewer.hasPermission(de.raindancer.modules.moderation.command.PromoteCommand.USE),
-                Icons.of(Material.IRON_HELMET, "<yellow>Staff rank", "<gray>" + services().roster().rankOf(subject)
-                        .map(rank -> rank.title()).orElse("Not staff") + ".", "<dark_gray>Promote, demote, permissions."),
+                Icons.of(Material.IRON_HELMET, "<yellow>Staff rank", "<gray>" + de.raindancer.modules.moderation.screen.RankMenu.titles(services().roster().ranksOf(subject)) + ".",
+                        "<dark_gray>Promote, demote, departments."),
                 "Only the server owner may hand out ranks",
                 click -> new RankMenu(services(), viewer, this, subject, subjectName).open());
     }

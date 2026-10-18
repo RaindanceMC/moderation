@@ -71,7 +71,7 @@ import java.util.UUID;
  */
 public final class ModerationModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.0.0")
+    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.1.0")
             .describedAs("Bans, mutes, reports, staff notes and the screens for them — over "
                     + "RainsCore's punishments, which stay whether or not this is installed")
             .by("Raindancer118");
@@ -295,11 +295,33 @@ public final class ModerationModule implements FlexModule {
                         de.raindancer.core.data.nbt.ItemText.ofTheServer()),
                 context.core().messages(), settings.current());
 
-        // Who is staff, at what rank. The nodes themselves are Core's Grants — see StaffRoster for why
-        // the label and the power are kept apart.
-        roster = new StaffRoster(context.dataFolder(), context.core().grants());
-        roster.load();
-        context.closeWith(roster::close);
+        // Who is staff: the staff groups (LuckPerms when installed). Seeding, the one-time move from
+        // staff.yml and reading the members all reach LuckPerms' storage, so off the server thread.
+        var groups = context.core().groups();
+        roster = new StaffRoster(groups);
+        Scheduling.async(context.plugin(), () -> {
+            roster.seedGroups();
+            // Only where the groups are LuckPerms': a server without it would mark staff.yml as moved
+            // while moving everybody into groups nobody else sees.
+            if (groups.editable()) {
+                int moved = de.raindancer.modules.moderation.store.LegacyStaffImport.run(
+                        de.raindancer.core.data.store.YamlStore.network(context.dataFolder().resolve("staff.yml")),
+                        context.core().grants(), groups);
+                if (moved > 0) {
+                    log.info("{} staff member(s) moved from staff.yml into their LuckPerms groups.", moved);
+                }
+            }
+            roster.load();
+            log.info("{} staff member(s) in the staff groups{}.", roster.size(),
+                    groups.editable() ? " — edit the groups in /lp editor" : " (no LuckPerms: defaults only)");
+        });
+        var following = groups.onChange(who -> Scheduling.async(context.plugin(), () -> {
+            roster.refresh(who);
+            if (who != null && staffService != null) {
+                staffService.applyOpPolicy(who);
+            }
+        }));
+        context.closeWith(following::close);
         staffService = new StaffService(context.plugin(), server, roster, context.core().grants(),
                 context.core().audit(), context.core().messages(), context.chat(),
                 context.core()::reapplyGrants, staffAlerts, settings.current());
@@ -435,7 +457,6 @@ public final class ModerationModule implements FlexModule {
                 // Other servers only see these once they are written.
                 pending.flush();
                 immune.flush();
-                roster.flush();
             });
             context.closeWith(writing::cancel);
         }
@@ -686,9 +707,6 @@ public final class ModerationModule implements FlexModule {
         // Every change is already on its way to disk; this catches the ones still in flight.
         if (vaults != null && !vaults.flushNow()) {
             log.error("A vault could not be written on shutdown.");
-        }
-        if (roster != null && !roster.flush()) {
-            log.error("The staff roster could not be written on shutdown.");
         }
         // The listeners are unregistered and the save timer cancelled by the context, in the reverse
         // order everything was registered — see ModuleContext.closeWith.

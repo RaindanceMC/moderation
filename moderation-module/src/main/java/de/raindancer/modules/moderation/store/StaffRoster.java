@@ -1,16 +1,11 @@
 package de.raindancer.modules.moderation.store;
 
-import de.raindancer.core.data.store.YamlStore;
-import de.raindancer.core.platform.log.Log;
-import de.raindancer.core.platform.log.LogChannel;
-import de.raindancer.core.platform.network.NetworkBus;
-import de.raindancer.core.platform.permission.Grants;
+import de.raindancer.core.platform.permission.PermissionGroups;
 import de.raindancer.modules.moderation.model.StaffRank;
 
-import org.bukkit.configuration.file.YamlConfiguration;
-
-import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,137 +14,133 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Who is staff, and at what rank.
+ * Who is staff, read from the staff groups (LuckPerms, or Core's local groups without it).
  *
- * <h2>Why the rank is stored when the permissions are the real power</h2>
- * The rank is the thing a person says out loud — "she's a moderator" — and the nodes are the thing the
- * server acts on. Keeping only the nodes means nobody can answer "what rank is she?" without comparing
- * thirteen booleans against four presets. Keeping only the rank means the per-person toggles cannot
- * exist at all.
+ * <p>The groups are the truth; this is a cache of who directly holds which, so screens and rules can ask
+ * on the server thread. It follows changes through {@link #refresh} — the module wires that to
+ * {@link PermissionGroups#onChange}, so a membership changed in {@code /lp editor} or on another server
+ * shows up here too.
  *
- * <p>So both: this owns the label, Core's {@link Grants} owns the power, and this can say when the two
- * have drifted — which is exactly what a helper with one extra node is. {@link #extraNodes} and
- * {@link #missingNodes} are what let a screen say "Moderator, and one extra" rather than quietly showing
- * her as an ordinary moderator for the next three months.
- *
- * <h2>Why a toggle only accepts a node some rank grants</h2>
- * Because the alternative is a typo scattering nodes into the grants file that no screen lists and
- * nothing can take away again. See {@link StaffRank#everyGrantableNode()}.
+ * <p>Writing methods and {@link #load} go to the groups and may block: never on the server thread.
  */
 public final class StaffRoster {
 
-    private static final LogChannel log = Log.of("moderation");
+    private final PermissionGroups groups;
+    private final Map<UUID, Set<StaffRank>> held = new ConcurrentHashMap<>();
 
-    private final Map<UUID, StaffRank> ranks = new ConcurrentHashMap<>();
-    private final Grants grants;
-    private final YamlStore store;
-
-    /**
-     * Nodes an admin has individually taken away from somebody, remembered so {@link #topUpFromPreset}
-     * knows not to hand them straight back.
-     *
-     * <h2>Why this has to be its own list rather than just "absent from grants"</h2>
-     * A node missing from somebody's grants means one of two completely different things: an admin
-     * took it away on purpose, or they were promoted before the preset grew it and simply never
-     * received it. {@link Grants} cannot tell those apart — a node is either held or it is not, with
-     * nothing to say which of the two stories is true — so without this, {@link #topUpFromPreset}
-     * could not tell "add what is new" from "restore what was refused" and had no choice but to do
-     * both, which is exactly the bug this list exists to prevent: a permission explicitly revoked
-     * quietly reappearing the next time its owner logs in.
-     *
-     * <p>Cleared whenever {@link #promote} runs — a fresh rank, including a re-application of the same
-     * one through {@link #reapplyPreset}, is a fresh start, not a set of exclusions carried over from
-     * whatever rank they held a moment before.
-     */
-    private final Map<UUID, Set<String>> denied = new ConcurrentHashMap<>();
-
-    private final DirtyKeys dirty = new DirtyKeys();
-    private final NetworkBus.Subscription following;
-
-    /** The same roster on every server of the network; the permissions it stands for are Core's. */
-    public StaffRoster(Path dataFolder, Grants grants) {
-        this(YamlStore.network(dataFolder.resolve("staff.yml")), grants);
+    public StaffRoster(PermissionGroups groups) {
+        this.groups = groups;
     }
 
-    StaffRoster(YamlStore store, Grants grants) {
-        this.grants = grants;
-        this.store = store;
-        this.following = store.onChange(this::reload);
+    /** Makes every staff group that does not exist yet, with its defaults. Existing ones are left alone. */
+    public void seedGroups() {
+        // Ladder first, so a group's parent exists before it.
+        for (StaffRank rank : StaffRank.values()) {
+            groups.seed(rank.seed());
+        }
     }
 
-    public void close() {
-        following.close();
+    public boolean editable() {
+        return groups.editable();
     }
 
-    /** Where the roster is kept — for a diagnostic, and for a test that wants to break the file. */
-    public Path file() {
-        return store.file();
-    }
-
-    // ---------------------------------------------------------------------------- the ladder
-
-    /**
-     * Makes somebody staff at this rank, replacing whatever they had.
-     *
-     * <p>Replaces rather than adds. A demotion is a promotion downwards, and the version that only
-     * added nodes made every demotion a no-op — the dangerous direction, because nobody notices a
-     * demotion that did not happen until the person uses the power they should have lost.
-     *
-     * @return whether anything changed
-     */
+    /** A rung replaces their current rung; a department is added to whatever they hold. */
     public synchronized boolean promote(UUID who, StaffRank rank) {
         if (who == null || rank == null) {
             return false;
         }
-        ranks.put(who, rank);
-        // A named preset rather than a bare set(): with LuckPerms behind Grants, this becomes a
-        // maintained LuckPerms group — rains_<rank key> — so an admin reading the LuckPerms editor sees
-        // "Moderator" rather than eleven unrelated-looking node strings. See Grants#setPreset.
-        grants.setPreset(who, rank.key(), rank.nodes());
-        // A fresh assignment of the rank's full node set already includes whatever was individually
-        // refused before — carrying the exclusion forward would have topUpFromPreset immediately
-        // undo half of what this line just did.
-        denied.remove(who);
-        dirty.mark(who.toString());
-        return true;
+        boolean changed = false;
+        if (rank.onLadder()) {
+            for (StaffRank rung : StaffRank.ladder()) {
+                if (rung != rank) {
+                    changed |= groups.leave(who, rung.group());
+                }
+            }
+        }
+        changed |= groups.join(who, rank.group());
+        refresh(who);
+        return changed;
     }
 
-    /**
-     * Takes the rank away, and every node with it.
-     *
-     * @return whether they were staff at all
-     */
-    public synchronized boolean demote(UUID who) {
-        if (who == null || ranks.remove(who) == null) {
+    /** Takes one rank — a rung or a department — away. */
+    public synchronized boolean takeAway(UUID who, StaffRank rank) {
+        if (who == null || rank == null) {
             return false;
         }
-        // Everything, including immunity. A demoted admin who keeps it is an account nobody can act on
-        // and nobody meant to protect.
-        grants.clear(who);
-        denied.remove(who);
-        dirty.mark(who.toString());
-        return true;
+        boolean changed = groups.leave(who, rank.group());
+        refresh(who);
+        return changed;
     }
 
-    /** Their rank, if they are staff. */
+    /** Off the staff: every staff group they are in. */
+    public synchronized boolean demote(UUID who) {
+        if (who == null) {
+            return false;
+        }
+        boolean changed = false;
+        for (StaffRank rank : StaffRank.values()) {
+            changed |= groups.leave(who, rank.group());
+        }
+        refresh(who);
+        return changed;
+    }
+
+    /** Re-reads one player's groups; {@code null} re-reads everybody. */
+    public void refresh(UUID who) {
+        if (who == null) {
+            load();
+            return;
+        }
+        Set<StaffRank> theirs = ranksIn(groups.directGroupsOf(who));
+        if (theirs.isEmpty()) {
+            held.remove(who);
+        } else {
+            held.put(who, theirs);
+        }
+    }
+
+    /** Reads every staff group's members. */
+    public synchronized void load() {
+        Map<UUID, Set<StaffRank>> fresh = new HashMap<>();
+        for (StaffRank rank : StaffRank.values()) {
+            for (UUID member : groups.membersOf(rank.group())) {
+                fresh.computeIfAbsent(member, id -> EnumSet.noneOf(StaffRank.class)).add(rank);
+            }
+        }
+        held.keySet().retainAll(fresh.keySet());
+        fresh.forEach((who, ranks) -> held.put(who, Set.copyOf(ranks)));
+    }
+
+    /** Their rung on the ladder — the highest, should they somehow be in two. */
     public Optional<StaffRank> rankOf(UUID who) {
-        return who == null ? Optional.empty() : Optional.ofNullable(ranks.get(who));
+        return ranksOf(who).stream().filter(StaffRank::onLadder)
+                .max((a, b) -> Integer.compare(a.weight(), b.weight()));
+    }
+
+    public Set<StaffRank> departmentsOf(UUID who) {
+        Set<StaffRank> departments = EnumSet.noneOf(StaffRank.class);
+        ranksOf(who).stream().filter(rank -> !rank.onLadder()).forEach(departments::add);
+        return Set.copyOf(departments);
+    }
+
+    /** Every staff rank they hold directly. */
+    public Set<StaffRank> ranksOf(UUID who) {
+        Set<StaffRank> theirs = who == null ? null : held.get(who);
+        return theirs == null ? Set.of() : theirs;
     }
 
     public boolean isStaff(UUID who) {
-        return who != null && ranks.containsKey(who);
+        return who != null && held.containsKey(who);
     }
 
-    /** Everybody with a rank. */
     public Set<UUID> everybody() {
-        return Set.copyOf(ranks.keySet());
+        return Set.copyOf(held.keySet());
     }
 
-    /** Everybody at exactly this rank. */
     public List<UUID> ofRank(StaffRank rank) {
         List<UUID> found = new ArrayList<>();
-        ranks.forEach((who, theirs) -> {
-            if (theirs == rank) {
+        held.forEach((who, theirs) -> {
+            if (theirs.contains(rank)) {
                 found.add(who);
             }
         });
@@ -157,202 +148,16 @@ public final class StaffRoster {
     }
 
     public int size() {
-        return ranks.size();
+        return held.size();
     }
 
-    // ---------------------------------------------------------------------------- one node at a time
-
-    /**
-     * Turns one node on or off for one person, leaving their rank alone.
-     *
-     * <p>The exception the presets exist to make rare rather than impossible: one helper who is trusted
-     * to ban, without inventing a fifth tier for her.
-     *
-     * @return whether they now hold it
-     */
-    public synchronized boolean toggle(UUID who, String node) {
-        if (!isStaff(who) || node == null || !StaffRank.everyGrantableNode().contains(node)) {
-            return false;
-        }
-        if (grants.has(who, node)) {
-            grants.revoke(who, node);
-            // Marked, so a later join does not read the absence as "never got around to granting
-            // this" and hand it straight back — see the field note on denied.
-            deniedFor(who).add(node);
-            dirty.mark(who.toString());
-            return false;
-        }
-        grants.grant(who, node);
-        // Granting it by hand is exactly as deliberate as revoking it was, and un-marks whatever
-        // refusal came before — a node given back on purpose is not still "denied".
-        undeny(who, node);
-        dirty.mark(who.toString());
-        return true;
-    }
-
-    /**
-     * Puts a drifted person back to exactly what their rank grants — both what is missing and, just as
-     * much, what is not. The deliberate full reset behind "Put the preset back": every individual
-     * toggle, in either direction, is undone.
-     */
-    public boolean reapplyPreset(UUID who) {
-        return rankOf(who).map(rank -> promote(who, rank)).orElse(false);
-    }
-
-    /**
-     * Grants whatever the rank has gained since somebody was last given it — and only that. A node an
-     * admin individually {@link #toggle}d off stays off, because it is in {@link #denied} rather than
-     * merely absent; this never removes anything either, so it is safe to call on every join rather
-     * than only when a screen asks for a deliberate reset. See {@code StaffService#topUpOnJoin}, its
-     * one caller.
-     *
-     * @return whether anything was actually new
-     */
-    public boolean topUpFromPreset(UUID who) {
-        return rankOf(who).map(rank -> {
-            Set<String> excluded = denied.getOrDefault(who, Set.of());
-            List<String> due = new ArrayList<>(rank.nodes());
-            due.removeAll(excluded);
-            return grants.grantAll(who, due);
-        }).orElse(false);
-    }
-
-    /** Whether their permissions are exactly what their rank grants. */
-    public boolean matchesPreset(UUID who) {
-        return extraNodes(who).isEmpty() && missingNodes(who).isEmpty();
-    }
-
-    /** What they hold beyond their rank — hand-granted at some point, by somebody. */
-    public List<String> extraNodes(UUID who) {
-        Optional<StaffRank> rank = rankOf(who);
-        if (rank.isEmpty()) {
-            return List.of();
-        }
-        List<String> extra = new ArrayList<>(grants.nodesFor(who));
-        extra.removeAll(rank.get().nodes());
-        extra.sort(String::compareTo);
-        return extra;
-    }
-
-    /** What their rank grants and they do not have — taken away at some point, by somebody. */
-    public List<String> missingNodes(UUID who) {
-        Optional<StaffRank> rank = rankOf(who);
-        if (rank.isEmpty()) {
-            return List.of();
-        }
-        List<String> missing = new ArrayList<>(rank.get().nodes());
-        missing.removeAll(grants.nodesFor(who));
-        missing.sort(String::compareTo);
-        return missing;
-    }
-
-    // ---------------------------------------------------------------------------- persistence
-
-    /**
-     * Reads the roster.
-     *
-     * <p>Does <b>not</b> re-apply the presets. The grants file is the authority on what somebody
-     * actually holds, and re-applying here would silently undo every deliberate per-person toggle on
-     * every restart.
-     */
-    public synchronized void load() {
-        store.readIfReadable().ifPresent(this::adopt);
-    }
-
-    /** Another server changed the roster: what this server changed goes out first, then theirs comes in. */
-    private synchronized void reload() {
-        if (flush()) {
-            load();
-        }
-    }
-
-    private void adopt(YamlConfiguration yaml) {
-        Map<UUID, StaffRank> readRanks = new java.util.HashMap<>();
-        Map<UUID, Set<String>> readDenied = new java.util.HashMap<>();
-        var root = yaml.getConfigurationSection("staff");
-        if (root != null) {
-            List<String> unreadable = new ArrayList<>();
-            for (String id : root.getKeys(false)) {
-                UUID who;
-                try {
-                    who = UUID.fromString(id);
-                } catch (IllegalArgumentException notAnId) {
-                    unreadable.add(id);
-                    continue;
-                }
-                Optional<StaffRank> rank = StaffRank.byName(root.getString(id));
-                if (rank.isEmpty()) {
-                    unreadable.add(id + " (" + root.getString(id) + ")");
-                    continue;
-                }
-                readRanks.put(who, rank.get());
-            }
-            if (!unreadable.isEmpty()) {
-                log.error("{} entry/entries in staff.yml could not be read and have been skipped: {}. "
-                                + "Anybody they named is not staff this session — their granted "
-                                + "permissions are untouched, so check grants.yml as well.",
-                        unreadable.size(), String.join(", ", unreadable));
+    private static Set<StaffRank> ranksIn(Set<String> groupNames) {
+        Set<StaffRank> ranks = EnumSet.noneOf(StaffRank.class);
+        for (StaffRank rank : StaffRank.values()) {
+            if (groupNames.contains(rank.group())) {
+                ranks.add(rank);
             }
         }
-        var deniedRoot = yaml.getConfigurationSection("denied");
-        if (deniedRoot != null) {
-            for (String id : deniedRoot.getKeys(false)) {
-                try {
-                    UUID who = UUID.fromString(id);
-                    List<String> nodes = deniedRoot.getStringList(id);
-                    if (!nodes.isEmpty()) {
-                        readDenied.computeIfAbsent(who, key -> new java.util.HashSet<>()).addAll(nodes);
-                    }
-                } catch (IllegalArgumentException notAnId) {
-                    // Already logged loudly above for the ranks that fail the same way. Losing an
-                    // entry here means a future top-up might hand back a node this one was refused —
-                    // not silent data loss, since grants.yml still says what they actually hold.
-                }
-            }
-        }
-        // Somebody this server changed and could not write yet keeps this server's word.
-        ranks.keySet().removeIf(who -> !readRanks.containsKey(who) && !dirty.has(who.toString()));
-        denied.keySet().removeIf(who -> !readDenied.containsKey(who) && !dirty.has(who.toString()));
-        readRanks.forEach((who, rank) -> {
-            if (!dirty.has(who.toString())) {
-                ranks.put(who, rank);
-            }
-        });
-        readDenied.forEach((who, nodes) -> {
-            if (!dirty.has(who.toString())) {
-                Set<String> theirs = ConcurrentHashMap.newKeySet();
-                theirs.addAll(nodes);
-                denied.put(who, theirs);
-            }
-        });
-    }
-
-    /** Writes what this server changed since the last time. @return whether it reached the database */
-    public synchronized boolean flush() {
-        return dirty.write(store, (yaml, id) -> {
-            UUID who = UUID.fromString(id);
-            StaffRank rank = ranks.get(who);
-            yaml.set("staff." + id, rank == null ? null : rank.key());
-            Set<String> nodes = denied.get(who);
-            yaml.set("denied." + id, nodes == null || nodes.isEmpty() ? null : new ArrayList<>(nodes));
-        });
-    }
-
-    // ---------------------------------------------------------------------------- internals
-
-    private Set<String> deniedFor(UUID who) {
-        return denied.computeIfAbsent(who, id -> ConcurrentHashMap.newKeySet());
-    }
-
-    /** Un-marks one node, dropping the entry entirely once nothing is left in it. */
-    private void undeny(UUID who, String node) {
-        Set<String> theirs = denied.get(who);
-        if (theirs == null) {
-            return;
-        }
-        theirs.remove(node);
-        if (theirs.isEmpty()) {
-            denied.remove(who, theirs);
-        }
+        return Set.copyOf(ranks);
     }
 }

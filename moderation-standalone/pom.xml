@@ -160,7 +160,12 @@
              tunnels in one click. -->
         <!-- 3.0.0: 2.44.0 as a major version — the RainsAntiCheat plugin is gone (anti-cheat inside moderation, detection by
              GrimAC); servers must remove the RainsAntiCheat jar. -->
-        <plugin.version>3.0.0</plugin.version>
+        <!-- 3.1.0: staff ranks are permission groups — LuckPerms groups support, mod, admin, owner (inheriting
+             upward) and the departments builder, creator, dev, tester. Seeded once, then edited in /lp editor.
+             /promote and /demote change group membership; trial mod is gone (old trial mods become support);
+             staff.yml and the per-person preset nodes are moved into the groups once. Mods get chat log,
+             invsee and the anticheat by default. -->
+        <plugin.version>3.1.0</plugin.version>
     </properties>
 
     <dependencies>

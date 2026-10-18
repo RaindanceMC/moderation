@@ -1,5 +1,6 @@
 package de.raindancer.modules.moderation.command;
 
+import de.raindancer.core.platform.util.Scheduling;
 import de.raindancer.modules.moderation.ModerationServices;
 import de.raindancer.modules.moderation.model.ModerationPermission;
 import de.raindancer.modules.moderation.model.StaffRank;
@@ -54,7 +55,7 @@ public final class PromoteCommand implements IModerationCommand {
 
     @Override
     public String describe() {
-        return "makes somebody staff at one of the four ranks";
+        return "makes somebody staff: a rung on the ladder, or a department on top";
     }
 
     @Override
@@ -75,7 +76,6 @@ public final class PromoteCommand implements IModerationCommand {
     public void execute(CommandSourceStack source, String[] args) {
         CommandSender sender = source.getSender();
         ModerationServices moderation = services.get();
-
         if (args.length == 0) {
             moderation.messages().send(sender, "moderation.usage",
                     "usage", "/promote <player> [" + String.join("|", StaffRank.names()) + "]");
@@ -87,9 +87,6 @@ public final class PromoteCommand implements IModerationCommand {
         }
         OfflinePlayer them = found.get();
         String name = Players.nameOf(them);
-
-        // No rank named: the next one up, so `/promote somebody` twice is a ladder rather than an
-        // error message. Somebody already at the top is told so rather than silently re-granted.
         Optional<StaffRank> wanted = args.length > 1
                 ? StaffRank.byName(args[1])
                 : nextUpFrom(moderation, them);
@@ -99,32 +96,36 @@ public final class PromoteCommand implements IModerationCommand {
                         "ranks", String.join(", ", StaffRank.names()));
             } else {
                 moderation.messages().send(sender, "moderation.rank.already-at-the-top",
-                        "player", name, "rank", StaffRank.ADMIN.title());
+                        "player", name, "rank", StaffRank.OWNER.title());
             }
             return;
         }
-        // The rule, not an op check: a mod may appoint a trial mod, an admin a mod, and nobody their
-        // own equal. See PromotionRule — the ladder having no top is what this prevents.
-        var allowed = moderation.promotionRule()
-                .mayPromote(actorOf(sender), them.getUniqueId(), wanted.get());
+        StaffRank rank = wanted.get();
+        var allowed = moderation.promotionRule().mayPromote(actorOf(sender), them.getUniqueId(), rank);
         if (allowed.isRefused()) {
             allowed.refusal().ifPresent(key -> moderation.messages().send(sender, key,
                     "rank", allowed.detail() == null ? "" : allowed.detail(),
                     "player", name));
             return;
         }
-        moderation.staff().promote(sender, them.getUniqueId(), name, wanted.get());
+        if (moderation.roster().ranksOf(them.getUniqueId()).contains(rank)) {
+            moderation.messages().send(sender, "moderation.rank.already", "player", name, "rank", rank.title());
+            return;
+        }
+        // The groups live in LuckPerms' storage: not on the server thread.
+        Scheduling.async(moderation.plugin(), () -> {
+            if (!moderation.staff().promote(sender, them.getUniqueId(), name, rank)) {
+                moderation.messages().send(sender, "moderation.rank.no-group", "rank", rank.title(),
+                        "group", rank.group());
+            }
+        });
     }
 
-    /** The rung above whatever they are on, or empty when they are already at the top. */
+    /** No rank named: one rung up, or onto the ladder at the bottom. */
     private Optional<StaffRank> nextUpFrom(ModerationServices moderation, OfflinePlayer them) {
-        Optional<StaffRank> current = moderation.roster().rankOf(them.getUniqueId());
-        if (current.isEmpty()) {
-            return Optional.of(StaffRank.values()[0]);
-        }
-        StaffRank[] ladder = StaffRank.values();
-        int at = current.get().ordinal();
-        return at + 1 < ladder.length ? Optional.of(ladder[at + 1]) : Optional.empty();
+        return moderation.roster().rankOf(them.getUniqueId())
+                .map(StaffRank::above)
+                .orElse(Optional.of(StaffRank.SUPPORT));
     }
 
     @Override
