@@ -169,7 +169,8 @@
              /admin; their groups' powers carry LuckPerms context rains:powers=on. /dev: a developer holds every
              permission (except WorldEdit) while it is on. Mods and up may whitelist; admins switch others' admin
              mode. Nobody is given WorldEdit by default. -->
-        <plugin.version>3.2.0</plugin.version>
+        <!-- 3.2.1: the on-duty switch has its own settings topic (Moderation → Staff → On duty) — 3.2.0 refused to start. -->
+        <plugin.version>3.2.1</plugin.version>
     </properties>
 
     <dependencies>
