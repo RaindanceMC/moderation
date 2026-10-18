@@ -1,5 +1,6 @@
 package de.raindancer.modules.moderation;
 
+import de.raindancer.core.platform.permission.Duty;
 import de.raindancer.core.platform.permission.GroupSeed;
 import de.raindancer.modules.moderation.model.ModerationPermission;
 import de.raindancer.modules.moderation.model.StaffRank;
@@ -173,7 +174,7 @@ class StaffRankTest {
         }
 
         @Test
-        @DisplayName("a builder's world tools only apply in the build world")
+        @DisplayName("a builder's gamemode only applies in the build world")
         void builderTools() {
             GroupSeed seed = StaffRank.BUILDER.seed();
             assertThat(seed.nodes()).anySatisfy(node -> {
@@ -181,6 +182,34 @@ class StaffRankTest {
                 assertThat(node.context()).containsEntry("world", StaffRank.BUILD_WORLD);
             });
             assertThat(StaffRank.BUILDER.nodes()).doesNotContain("minecraft.command.gamemode");
+        }
+
+        @Test
+        @DisplayName("dev has everything, but only while /dev is on — and never WorldEdit")
+        void devEverythingInDevMode() {
+            GroupSeed seed = StaffRank.DEV.seed();
+            assertThat(seed.nodes()).anySatisfy(node -> {
+                assertThat(node.permission()).isEqualTo("*");
+                assertThat(node.value()).isTrue();
+                assertThat(node.context()).containsEntry(Duty.DEV, Duty.ON);
+            });
+            assertThat(seed.nodes()).anySatisfy(node -> {
+                assertThat(node.permission()).isEqualTo("worldedit.*");
+                assertThat(node.value()).isFalse();
+                assertThat(node.context()).containsEntry(Duty.DEV, Duty.ON);
+            });
+            assertThat(seeded(seed)).contains(StaffRank.DEV_MODE);
+        }
+
+        @Test
+        @DisplayName("nobody is given WorldEdit by default")
+        void noWorldEdit() {
+            for (StaffRank rank : StaffRank.values()) {
+                assertThat(rank.seed().nodes()).noneSatisfy(node -> {
+                    assertThat(node.permission()).startsWith("worldedit");
+                    assertThat(node.value()).isTrue();
+                });
+            }
         }
 
         @Test
@@ -238,6 +267,36 @@ class StaffRankTest {
     void noDuplicates() {
         for (StaffRank rank : StaffRank.values()) {
             assertThat(rank.seed().nodes()).doesNotHaveDuplicates();
+        }
+    }
+
+    @Nested
+    @DisplayName("on duty")
+    class OnDuty {
+
+        @Test
+        @DisplayName("a rung's powers only apply on duty; staff chat and switching into admin mode always")
+        void powersNeedDuty() {
+            for (StaffRank rank : List.of(StaffRank.SUPPORT, StaffRank.MOD, StaffRank.ADMIN)) {
+                for (GroupSeed.Node node : rank.seed().nodes()) {
+                    if (StaffRank.ALWAYS.contains(node.permission())) {
+                        assertThat(node.everywhere()).as(node.permission()).isTrue();
+                    } else {
+                        assertThat(node.context()).as(rank + " " + node.permission())
+                                .containsEntry(Duty.POWERS, Duty.ON);
+                    }
+                }
+            }
+            assertThat(seeded(StaffRank.SUPPORT.seed())).contains(StaffRank.ADMIN_MODE,
+                    ModerationPermission.STAFF_CHAT.node());
+        }
+
+        @Test
+        @DisplayName("mods and up may whitelist; admins may switch somebody else's admin mode")
+        void whitelistAndOthers() {
+            assertThat(StaffRank.SUPPORT.nodes()).doesNotContain(StaffRank.WHITELIST);
+            assertThat(StaffRank.MOD.nodes()).contains(StaffRank.WHITELIST).doesNotContain(StaffRank.ADMIN_MODE_OTHERS);
+            assertThat(StaffRank.ADMIN.nodes()).contains(StaffRank.ADMIN_MODE_OTHERS);
         }
     }
 }

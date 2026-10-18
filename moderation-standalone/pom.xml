@@ -165,7 +165,11 @@
              /promote and /demote change group membership; trial mod is gone (old trial mods become support);
              staff.yml and the per-person preset nodes are moved into the groups once. Mods get chat log,
              invsee and the anticheat by default. -->
-        <plugin.version>3.1.0</plugin.version>
+        <!-- 3.2.0: on duty — a switch (Moderation → Staff) makes support, mods and admins ordinary players until
+             /admin; their groups' powers carry LuckPerms context rains:powers=on. /dev: a developer holds every
+             permission (except WorldEdit) while it is on. Mods and up may whitelist; admins switch others' admin
+             mode. Nobody is given WorldEdit by default. -->
+        <plugin.version>3.2.0</plugin.version>
     </properties>
 
     <dependencies>

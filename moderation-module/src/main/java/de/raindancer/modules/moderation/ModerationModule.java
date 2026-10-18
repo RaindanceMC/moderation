@@ -71,7 +71,7 @@ import java.util.UUID;
  */
 public final class ModerationModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.1.0")
+    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.2.0")
             .describedAs("Bans, mutes, reports, staff notes and the screens for them — over "
                     + "RainsCore's punishments, which stay whether or not this is installed")
             .by("Raindancer118");
@@ -315,6 +315,10 @@ public final class ModerationModule implements FlexModule {
             log.info("{} staff member(s) in the staff groups{}.", roster.size(),
                     groups.editable() ? " — edit the groups in /lp editor" : " (no LuckPerms: defaults only)");
         });
+        var duty = context.settings(StaffDutySettings.class, StaffDutySettings.DEFAULTS);
+        de.raindancer.core.platform.permission.Duty.powersNeedAdminMode(duty.current().powersNeedAdminMode());
+        duty.onChange(now -> de.raindancer.core.platform.permission.Duty.powersNeedAdminMode(now.powersNeedAdminMode()));
+        context.closeWith(() -> de.raindancer.core.platform.permission.Duty.powersNeedAdminMode(false));
         var following = groups.onChange(who -> Scheduling.async(context.plugin(), () -> {
             roster.refresh(who);
             if (who != null && staffService != null) {

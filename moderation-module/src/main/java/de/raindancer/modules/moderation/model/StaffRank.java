@@ -1,5 +1,6 @@
 package de.raindancer.modules.moderation.model;
 
+import de.raindancer.core.platform.permission.Duty;
 import de.raindancer.core.platform.permission.GroupSeed;
 import org.bukkit.Material;
 
@@ -34,11 +35,11 @@ public enum StaffRank {
             "The server operator: every permission of every plugin, and the vanilla commands."),
 
     BUILDER("Builder", 0, "yellow", Material.BRICKS,
-            "Builds the hub, the maps and the event stages. Creative and world tools in the build world only."),
+            "Builds the hub, the maps and the event stages. Creative in the build world only."),
     CREATOR("Creator", 0, "light_purple", Material.SPYGLASS,
             "Makes videos and streams about the server."),
     DEV("Developer", 0, "dark_aqua", Material.COMMAND_BLOCK,
-            "Works on the plugins: performance tools, maintenance mode."),
+            "Works on the plugins: performance tools, maintenance mode, and every permission while /dev is on."),
     TESTER("Tester", 0, "gray", Material.TARGET,
             "Tries new features before everybody else does.");
 
@@ -64,6 +65,15 @@ public enum StaffRank {
     public static final String ANTICHEAT_MANAGE = "rainsanticheat.manage";
     /** The world a builder's creative and world tools are limited to (LuckPerms context {@code world}). */
     public static final String BUILD_WORLD = "build";
+    /** Switching into admin mode (essentials) — always, or nobody could go on duty. */
+    public static final String ADMIN_MODE = "essentials.admin";
+    /** Switching somebody else's admin mode. */
+    public static final String ADMIN_MODE_OTHERS = "essentials.admin.others";
+    public static final String WHITELIST = "minecraft.command.whitelist";
+    /** Switching dev mode ({@code /dev}), in which a dev holds every permission. */
+    public static final String DEV_MODE = "rains.moderation.dev";
+    /** What a rung holds off duty too; everything else of theirs needs {@code rains:powers=on}. */
+    public static final Set<String> ALWAYS = Set.of(ModerationPermission.STAFF_CHAT.node(), ADMIN_MODE);
     /** Building in a locked world (hub, maps) while in creative — Core's LockedWorlds. */
     public static final String LOCKED_WORLDS_BUILD = "rainscore.lockedworlds.build";
 
@@ -92,6 +102,7 @@ public enum StaffRank {
                     everything.add(permission.node());
                 }
             }
+            everything.add(ADMIN_MODE);
             if (weight >= MOD.weight) {
                 everything.add(CLAIM_ADMIN);
                 everything.add(WARP_STAFF);
@@ -100,12 +111,14 @@ public enum StaffRank {
                 everything.add(TELEPORT);
                 everything.add(ANTICHEAT_LOOK);
                 everything.add(ANTICHEAT_ALERTS);
+                everything.add(WHITELIST);
             }
             if (weight >= ADMIN.weight) {
                 everything.add(WARP_MANAGE);
                 everything.add(HOMES_UNLIMITED);
                 everything.add(HUNGERGAMES_ADMIN);
                 everything.add(ANTICHEAT_MANAGE);
+                everything.add(ADMIN_MODE_OTHERS);
                 everything.addAll(CLAIM_BYPASSES);
             }
             // The owner adds nothing: an operator already holds everything.
@@ -128,6 +141,7 @@ public enum StaffRank {
                 everything.add("rainsperformance.notify");
                 everything.add("rainsperformance.teleport");
                 everything.add("rainscore.maintenance");
+                everything.add(DEV_MODE);
             }
             case TESTER -> everything.add(ModerationPermission.STAFF_CHAT.node());
             default -> { }
@@ -145,11 +159,19 @@ public enum StaffRank {
         if (this != OWNER) {
             List<String> own = new ArrayList<>(nodes());
             below.ifPresent(lower -> own.removeAll(lower.nodes()));
-            seed = seed.granting(own);
+            for (String node : own) {
+                // A rung's powers only on duty — see Duty; with the server's switch off that is always.
+                seed = onLadder() && !ALWAYS.contains(node)
+                        ? seed.grantingIn(node, Duty.POWERS, Duty.ON)
+                        : seed.granting(node);
+            }
         }
         if (this == BUILDER) {
-            seed = seed.grantingIn("minecraft.command.gamemode", "world", BUILD_WORLD)
-                    .grantingIn("worldedit.*", "world", BUILD_WORLD);
+            seed = seed.grantingIn("minecraft.command.gamemode", "world", BUILD_WORLD);
+        }
+        if (this == DEV) {
+            // Everything in dev mode — except WorldEdit, which nobody gets unless the owner hands it out.
+            seed = seed.grantingIn("*", Duty.DEV, Duty.ON).denyingIn("worldedit.*", Duty.DEV, Duty.ON);
         }
         return seed;
     }

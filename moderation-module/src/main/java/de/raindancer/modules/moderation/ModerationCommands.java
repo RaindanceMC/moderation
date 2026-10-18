@@ -151,6 +151,9 @@ public final class ModerationCommands {
                         .taking("[player] — somebody else, if you may")
                         .needing(ModerationPermission.VANISH.node())
                         .auditUsage(),
+                ModuleCommand.of("dev", "Switches dev mode: every permission while it is on",
+                                new de.raindancer.modules.moderation.command.DevCommand(ModerationCommands::require))
+                        .needing(de.raindancer.modules.moderation.model.StaffRank.DEV_MODE),
                 ModuleCommand.of("vault", "Opens your personal vault",
                                 new VaultCommand(ModerationCommands::require))
                         .needing(VaultCommand.USE),

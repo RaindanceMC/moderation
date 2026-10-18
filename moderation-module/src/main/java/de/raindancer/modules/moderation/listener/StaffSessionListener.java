@@ -119,6 +119,7 @@ public final class StaffSessionListener implements IModerationListener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(PlayerQuitEvent event) {
+        de.raindancer.core.platform.permission.Duty.forget(event.getPlayer().getUniqueId());
         UUID leaving = event.getPlayer().getUniqueId();
         forget(leaving);
         for (IModerationListener listener : everybodyElse) {

@@ -106,6 +106,12 @@ moderation:
     not-for-ever-for-you: "<red>A permanent ban is an admin's decision. <gray>You can ban for up to <white><detail></white>."
     not-yours-to-lift: "<red>That is a permanent ban, so lifting it is an admin's decision."
 
+  # ── dev mode ─────────────────────────────────────────────────────────────
+  dev:
+    switched-on: "<green>Dev mode on — every permission is yours. <gray>Try not to break anything you cannot fix."
+    switched-off: "<gray>Dev mode off. Back to being merely talented."
+    needs-luckperms: "<red>Dev mode is a LuckPerms context, and this server has no LuckPerms."
+
   # ── staff ranks ──────────────────────────────────────────────────────────
   rank:
     changed: "<green><white><player></white> is now <<colour>><rank></<colour>><gray>."
