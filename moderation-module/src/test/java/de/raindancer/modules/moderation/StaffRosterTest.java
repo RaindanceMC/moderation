@@ -167,4 +167,19 @@ class StaffRosterTest {
             assertThat(groups.seed(StaffRank.MOD.seed())).isFalse();
         }
     }
+
+    @Test
+    @DisplayName("a dev group that lost /dev gets it back on every start; the dev keeps it")
+    void devAlwaysHasDevMode() {
+        LocalGroups bare = new LocalGroups(new YamlStore(folder.resolve("bare.yml")), grants);
+        bare.seed(de.raindancer.core.platform.permission.GroupSeed.named("dev").granting("rains.moderation.staffchat"));
+        bare.join(BO, "dev");
+        assertThat(grants.nodesFor(BO)).doesNotContain(StaffRank.DEV_MODE);
+
+        new StaffRoster(bare).seedGroups();
+
+        assertThat(grants.nodesFor(BO)).contains(StaffRank.DEV_MODE);
+        assertThat(StaffRank.DEV.mustHold()).containsExactly(StaffRank.DEV_MODE);
+        assertThat(StaffRank.MOD.mustHold()).isEmpty();
+    }
 }
