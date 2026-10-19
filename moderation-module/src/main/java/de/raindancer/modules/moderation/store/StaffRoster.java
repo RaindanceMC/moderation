@@ -32,17 +32,11 @@ public final class StaffRoster {
         this.groups = groups;
     }
 
-    /**
-     * Makes every staff group that does not exist yet, with its defaults. Existing ones are left alone, except
-     * for what a rank must always hold ({@link StaffRank#mustHold}): that is put back.
-     */
+    /** Makes every staff group that does not exist yet, with its defaults. Existing ones are left alone. */
     public void seedGroups() {
         // Ladder first, so a group's parent exists before it.
         for (StaffRank rank : StaffRank.values()) {
             groups.seed(rank.seed());
-        }
-        for (StaffRank rank : StaffRank.values()) {
-            rank.mustHold().forEach(node -> groups.ensure(rank.group(), node));
         }
     }
 

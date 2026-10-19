@@ -170,8 +170,7 @@
              permission (except WorldEdit) while it is on. Mods and up may whitelist; admins switch others' admin
              mode. Nobody is given WorldEdit by default. -->
         <!-- 3.2.1: the on-duty switch has its own settings topic (Moderation → Staff → On duty) — 3.2.0 refused to start. -->
-        <!-- 3.3.0: the dev group always holds /dev (rains.moderation.dev): put back on every start if an edit in LuckPerms took it. Needs RainsCore with PermissionGroups.ensure. -->
-        <plugin.version>3.3.0</plugin.version>
+        <plugin.version>3.2.1</plugin.version>
     </properties>
 
     <dependencies>

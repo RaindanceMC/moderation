@@ -149,14 +149,6 @@ public enum StaffRank {
         return Set.copyOf(everything);
     }
 
-    /**
-     * What the group must always hold, put back on every start even after an edit in LuckPerms took it — unlike
-     * {@link #nodes()}, which are only the defaults it starts with.
-     */
-    public Set<String> mustHold() {
-        return this == DEV ? Set.of(DEV_MODE) : Set.of();
-    }
-
     /** What the group is created with: its own nodes on top of the rung below, which it inherits. */
     public GroupSeed seed() {
         GroupSeed seed = GroupSeed.named(group()).displayName(title).weight(groupWeight());
