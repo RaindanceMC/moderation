@@ -1,0 +1,63 @@
+id: punishments
+title: Mutes, bans and warnings
+summary: What a mute, freeze, kick, warning or ban means for you, how long it lasts, and how to appeal.
+intro: |
+  Nobody likes this page, and everybody ends up reading it at some point. Here is what the staff can do, what you will see when they do, and what comes next.
+icon: IRON_BARS
+category: Chat & community
+order: 41
+module: moderation
+aliases: [muted, mute, banned, ban, kick, kicked, warn, warning, warnings, freeze, frozen, punishment, appeal]
+keywords: [punished, chat, unban, unmute, record, strikes, temporary, permanent]
+related: [reports, fines-and-debt, fair-play, rules]
+sections:
+  - question: What is a warning?
+    title: Warnings
+    text: |
+      A formal "this is not on" on your record. You are told the reason in chat. Nothing else happens to you.
+      {if:moderation:punishments.warns-before-ban > 0}But they add up: <white>{setting:moderation:punishments.warns-before-ban|count} warnings</white> within {setting:moderation:punishments.warn-window-days|days} bring an automatic ban ({setting:moderation:punishments.warn-ban-length}). A warning older than that no longer counts.{/if}
+      {if:moderation:punishments.warn-fine || moderation:punishments.warn-fine-percent > 0}On this server a warning also costs money, charged at once.{/if}
+  - question: What does being muted mean?
+    title: Mute
+    text: |
+      You cannot talk in chat. Whenever you try, you are told the reason and how long is left. You can still play, and commands that are not chat work as usual.
+      A mute is temporary or permanent; when it ends, you talk again without doing anything.
+      {if:moderation:punishments.mute-buyoff-per-hour > 0}A temporary mute can be bought off: see {topic:fines-and-debt}.{/if}
+  - question: What is a freeze?
+    title: Freeze
+    text: |
+      A short build ban: you cannot build or break blocks while a moderator walks over to talk to you. Typically minutes, by default {setting:moderation:punishments.default-freeze-length}. Talk to them — that is the point.
+  - question: What does a kick do?
+    title: Kick
+    text: |
+      You are thrown off once, with the reason on the screen. You can rejoin at once. It is a "please stop", not a ban.
+  - question: What does a ban do?
+    title: Ban
+    text: |
+      You are removed and cannot rejoin until the ban ends or is lifted. The screen on joining shows the reason and, for a temporary ban, the time left.
+      {if:moderation:punishments.appeal-message}The server adds this: <i>{setting:moderation:punishments.appeal-message}</i>{/if}
+      Bans carry over the whole network, and a moderator can lift one any time they find it was a mistake.
+  - question: Am I told about it?
+    title: Being told
+    text: |
+      Online: right away, in chat or on the kick screen. Offline: you get a "while you were away" note when you join. Everything is on your record, and every record entry names who did it and why.
+  - question: Who hears about my punishment?
+    title: Announcements
+    text: |
+      {if:moderation:announce.everyone}Bans and mutes are announced to the server.{else}Punishments are kept to the staff; other players are not told.{/if}
+      {if:moderation:announce.everyone && moderation:announce.show-moderator}The moderator's name is in the announcement.{/if}
+      {if:moderation:announce.kicks}Kicks are announced too.{/if}{if:moderation:announce.warnings} So are warnings.{/if}
+  - question: Can staff punish for any reason?
+    title: Rules
+    text: |
+      They punish by the server's rules — read them with {run:/rules}. Common reasons have ladders: the first offence gets a short punishment, repeats get longer.{if:moderation:punishments.escalate} That is how it works here: your record decides the length.{/if}
+      Some rule breaks have a fixed punishment written next to the rule.
+  - question: Is my punishment unfair?
+    title: Appeals
+    text: |
+      {if:moderation:punishments.appeal-message}{setting:moderation:punishments.appeal-message}{else}Ask the staff politely. Insulting them has never shortened a ban.{/if}
+      Staff cannot be punished by other staff behind your back: a ban or mute needs a named moderator and a reason, and is journalled so it can be reviewed.
+  - question: Can I dodge a punishment?
+    title: Evading
+    text: |
+      Trying to — an alt account, a second client — is a rule break and a worse punishment. Staff are told when a banned player knocks, a muted one talks or a frozen one builds anyway.

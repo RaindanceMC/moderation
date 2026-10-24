@@ -1,0 +1,47 @@
+id: reports
+title: Reporting a player
+summary: How to tell the staff about griefing, cheating or nasty chat — and what happens to your report.
+intro: |
+  Somebody ruining your day? Do not shout in public chat — tell the people whose job it is. It takes half a minute.
+icon: BELL
+category: Chat & community
+order: 40
+module: moderation
+when: moderation:reports.enabled
+aliases: [report, reporting, grief, griefer, cheater, hacker, complaint]
+keywords: [staff, moderator, harassment, stealing, spam, hacking, abuse, tell]
+commands: [report]
+related: [punishments, fair-play]
+sections:
+  - question: How do I report somebody?
+    title: Filing a report
+    text: |
+      Type {cmd:/report <player>}. A menu asks what it is about; pick a category, then write what happened — where and when, so somebody can actually go and look.
+      Short on patience? {cmd:/report <player> <what happened>} files it straight away. Plain {run:/report} lets you pick the player from a list.
+      You get an id back, like <white>R-12</white>: that is how the staff know it.
+  - question: What can I report for?
+    title: Categories
+    text: |
+      <white>Cheating and exploits</white>: flying, speed, kill aura, x-ray, duplicating items, abusing a bug, lag machines, ban evasion.
+      <white>Griefing and stealing</white>: griefing, stealing, getting into a claim, killing without agreement, trapping, scams, killing others' animals.
+      <white>Chat and behaviour</white>: harassment, hate speech, threats, sharing personal information, sexual content, bad language, spam, advertising, pretending to be staff. For these, what was said around it counts as evidence.
+      <white>Builds and names</white>, and <white>Something else</white> for the rest.
+  - question: Are there limits?
+    title: Limits
+    text: |
+      Yes — a queue anybody can flood is a queue nobody reads.
+      <white>•</white> Write at least {setting:moderation:reports.shortest-report|count} characters. "hes bad" does not help anybody.
+      {if:moderation:reports.cooldown-seconds > 0}<white>•</white> Wait {setting:moderation:reports.cooldown-seconds|seconds} between reports.{/if}
+      {if:moderation:reports.most-open-per-player > 0}<white>•</white> No more than {setting:moderation:reports.most-open-per-player|count} open reports at once; one is free again as soon as staff deal with it.{/if}
+      <white>•</white> One open report per player: if you already reported somebody, you are told its id instead.
+      <white>•</white> You cannot report yourself.
+  - question: What happens afterwards?
+    title: After the report
+    text: |
+      {if:moderation:reports.notify-staff}Online staff are told at once, and{else}Staff find it in the queue, and{/if} a moderator looks at it — they can see where you and the reported player stood.
+      Whether and how somebody gets punished is the moderator's decision. Punishments are never automatic from one report.
+      {if:moderation:reports.tell-reporter}When it is closed, you are told what was done — or that nothing was found. If you are offline, you hear it when you next join.{else}You are not told how it ended on this server.{/if}
+  - question: Can I abuse it?
+    title: False reports
+    text: |
+      You can, and it is noticed: every report carries your name and is kept with the record. Reporting is for real problems. Reports made in bad faith are a rule break of their own.

@@ -1,0 +1,42 @@
+id: mod-investigate
+title: "Investigating: logs, anti-cheat, inventories"
+summary: Staff — /attempts, /audit, /chatlog, /invsee, /anticheat and the x-ray evidence.
+intro: |
+  Everything that happens leaves a trace. Here is where to read it — and every lookup is itself logged, so be nosy for a reason.
+icon: SPYGLASS
+category: Staff
+order: 53
+module: moderation
+permission: rains.moderation.history
+aliases: [attempts, audit, chatlog, chatsearch, invsee, anticheat, ac, grim, xray]
+keywords: [log, search, evidence, flags, inventory, journal]
+commands: [attempts, audit, chatlog, invsee, anticheat]
+related: [mod-tools, mod-reports, fair-play]
+sections:
+  - question: What did punished players try?
+    title: /attempts
+    permission: rains.moderation.attempts
+    text: |
+      {run:/attempts} lists attempts while punished: a banned player knocking, a muted one talking, a frozen one building. Filter: <white>player:Name type:join|chat|command|build day:today last:2h from: to: page:2</white>, plus words.
+      {cmd:/attempts alerts on|off} switches the live alerts for you.{if:moderation:punishments.attempt-alerts} They come the first time at once, then at most every {setting:moderation:punishments.attempt-alert-minutes|minutes} per player.{/if}
+  - question: How do I search chat?
+    title: /chatlog
+    permission: rains.moderation.chatlog
+    text: |
+      {cmd:/chatlog player:Name from:2026-10-10 17:30 to:18:00 words "a phrase"} — also <white>day:yesterday</white>, <white>last:2h</white>, <white>page:2</white>. Times are Berlin time. Every word must match; quotes for a phrase. Searches are audited.
+  - question: Where is the audit journal?
+    title: /audit
+    text: |
+      {cmd:/audit [player] [feature]} reads joins, teleports, gamemode changes and moderation actions; nothing shows the newest across the server. {if:moderation:records.audit}Every punishment, lift, note and report is written there.{/if}
+  - question: How do I look into an inventory?
+    title: /invsee
+    permission: rains.moderation.invsee
+    text: |
+      {cmd:/invsee <player>} opens it, online or off. Offline you see the copy the last server saved, read only. Changing things needs <white>rains.moderation.invsee.edit</white>. Audited.
+  - question: How do I look up cheat flags?
+    title: /anticheat
+    permission: rainsanticheat.command
+    text: |
+      {run:/anticheat} opens the suspects screen. {cmd:/anticheat info <player>}, {cmd:/anticheat log <player> [page]}, {cmd:/anticheat go <player>} and {cmd:/anticheat back}, {run:/anticheat checks}, {run:/anticheat status}.
+      {cmd:/anticheat alerts} and <white>verbose</white> switch chat alerts for you; <white>alert off|on <check></white> mutes a family. With <white>rainsanticheat.manage</white>: <white>fresh</white> measures a player afresh, <white>reset</white> wipes their record.
+      Evidence is {if:moderation:anticheat.evidence}kept: the newest {setting:moderation:anticheat.evidence-per-player|count} flags per player{else}not kept{/if}. Alert families switched off: {setting:moderation:anticheat.disabled-checks}; watch-only: {setting:moderation:anticheat.silent-checks}.

@@ -1,0 +1,35 @@
+id: fines-and-debt
+title: Fines, debt and buying off a mute
+summary: Money penalties from staff, how to see and pay what you owe, and ending a mute early.
+intro: |
+  Some penalties cost coin rather than patience. Here is what that means, and how to settle up.
+icon: GOLD_NUGGET
+category: Chat & community
+order: 42
+module: moderation
+aliases: [fine, fines, debt, buyoff, owe, pay-debt]
+keywords: [money, penalty, coins, unmute, balance, owed]
+commands: [debt, buyoff]
+related: [punishments]
+sections:
+  - question: Why was I fined?
+    title: Fines
+    text: |
+      A moderator can fine you for something, or a warning may cost money. You are told the amount and the reason. A fine is taken from your balance at once.
+      {if:moderation:fines.victim-share-percent > 0}If a fine was given for harm to another player, the victim gets {setting:moderation:fines.victim-share-percent|percent} of it; the rest goes to the server.{/if}
+      A fine can be revoked: if staff made a mistake you are told, and the money is given back.
+  - question: What if I cannot pay?
+    title: Debt
+    text: |
+      {if:moderation:fines.unpaid-becomes-debt}What your balance cannot cover is taken as far as it goes, and the rest becomes <white>debt</white>. The economy collects it from your future income, and you can pay it yourself.{else}A fine you cannot pay is refused: nothing is taken and no debt builds up.{/if}
+  - question: How do I see and pay my debt?
+    title: /debt
+    when: moderation:fines.unpaid-becomes-debt
+    text: |
+      {run:/debt} lists what you owe and for what. Pay with {cmd:/debt pay <amount>} or {run:/debt pay all}; a part is fine, the rest stays owed. Staff may also write a debt off.
+  - question: Can I end a mute early?
+    title: Buying off a mute
+    when: moderation:punishments.mute-buyoff-per-hour > 0
+    text: |
+      Yes, if it is a temporary mute. {run:/buyoff} shows the price: <white>{setting:moderation:punishments.mute-buyoff-per-hour|money}</white> for every hour left, a started hour counting whole. {cmd:/buyoff confirm} pays it and you can talk at once.
+      Not possible: a mute given for more than {setting:moderation:punishments.mute-buyoff-longest-hours|hours}, and permanent mutes. Bans can never be bought off.

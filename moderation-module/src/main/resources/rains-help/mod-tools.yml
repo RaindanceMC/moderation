@@ -1,0 +1,60 @@
+id: mod-tools
+title: Moderating players
+summary: Staff — /mod, warn, mute, freeze, kick, ban, unban, history, rule breaks, and who may do what.
+intro: |
+  Staff business. Most of this lives behind one door, {run:/mod}, but every action also has a typed form for when you are quick.
+icon: IRON_BARS
+category: Staff
+order: 50
+module: moderation
+permission: rains.moderation.history
+aliases: [mod, ban, unban, pardon, mute, unmute, kick, warn, freeze, unfreeze, history, broke, tempban, protect]
+keywords: [punish, moderator, record, ladder, preset, reason, length, console, immune]
+commands: [mod, warn, mute, unmute, freeze, unfreeze, kick, ban, unban, history, broke, protect, unprotect]
+related: [mod-reports, mod-fines, mod-investigate, mod-powers]
+sections:
+  - question: Where do I start?
+    title: /mod
+    text: |
+      {run:/mod} lets you pick a player and opens their page: presence, standing, record, notes, reports and the actions you may take. {cmd:/mod <player>} opens one directly; {cmd:/mod info <player>} says where they stand in chat. From the console, {cmd:/mod <player>} prints the overview.
+      The same page opens from any player's profile. Every button asks for what it does first.
+  - question: How do I warn, mute, freeze or kick?
+    title: Typed punishments
+    text: |
+      {cmd:/warn <player> <reason>}, {cmd:/mute <player> [length] [reason]}, {cmd:/freeze <player> [length] [reason]}, {cmd:/kick <player> [reason]}. Undo with {cmd:/unmute <player>} and {cmd:/unfreeze <player>}.
+      Lengths read <white>90m</white>, <white>3d</white>, <white>perm</white> (m is minutes, M is months). Left out, the defaults apply: mute {setting:moderation:punishments.default-mute-length}, freeze {setting:moderation:punishments.default-freeze-length}.
+      Instead of a length you may name a preset reason such as <white>spam</white> or <white>griefing</white>; it picks the length. Each needs its permission: warn, mute, freeze, kick (<white>rains.moderation.</white>…).
+  - question: How do I ban, and how long?
+    title: Bans
+    text: |
+      {cmd:/ban <player> [length|reason] [reason]} — default length {setting:moderation:punishments.default-ban-length}. {cmd:/unban <player>} lifts it; the ban stays on the record.
+      Mods hold <white>tempban</white>: up to {setting:moderation:punishments.mod-tempban-max}, never permanent. Admins hold <white>ban</white>: any length, and they alone lift a permanent ban. {if:moderation:punishments.kick-on-ban}Banning kicks the player at once, on any server of the network.{else}A ban applies at the next login.{/if}
+  - question: What are the preset reasons?
+    title: Reasons and ladders
+    text: |
+      Presets exist for mutes (spam, caps, swearing, toxicity, harassment…), bans (griefing, stealing, cheating, x-ray, duping, ban evasion…), kicks, warnings and freezes. Each has a ladder of lengths.
+      {if:moderation:punishments.escalate}Escalation is on: the suggested length climbs with the player's earlier offences for that reason.{else}Escalation is off: every preset uses its first rung.{/if}
+  - question: What are automatic warnings?
+    title: Warning threshold
+    when: moderation:punishments.warns-before-ban > 0
+    text: |
+      {setting:moderation:punishments.warns-before-ban|count} warnings inside {setting:moderation:punishments.warn-window-days|days} ban the player automatically for {setting:moderation:punishments.warn-ban-length}, as "the warning threshold".
+  - question: What is /broke?
+    title: /broke
+    permission: rains.moderation.warn
+    text: |
+      {cmd:/broke <player>} shows the server's rules; pick one — or {cmd:/broke <player> <rule number> [what happened]} — and the player gets that rule's own punishment, counted as their 1st, 2nd, … offence. A rule with no fixed punishment is refused; set one with <white>/rules punishment</white>.
+  - question: How do I read a record?
+    title: /history
+    text: |
+      {cmd:/history <player>} lists what happened to them: punishments, lifts, reports, with who and why. {if:moderation:records.keep-days > 0}Records are kept {setting:moderation:records.keep-days|days}.{else}Records are kept for ever.{/if}
+  - question: Can I act on anybody?
+    title: Limits
+    text: |
+      Not on yourself (for punishments), not on <i>protected</i> accounts — operators, and anybody the console named with {cmd:/protect <player>} (undo with {cmd:/unprotect <player>}, console only; no permission can grant it). Only the console may act on them.
+      {if:moderation:announce.show-moderator}Your name appears in public announcements.{else}Your name is only shown to staff.{/if}
+  - question: What are the staff ranks?
+    title: Ranks
+    text: |
+      <white>Support</white> warns and reads records, never stops anybody. <white>Moderator</white> adds mute, kick, tempban, freeze, vanish. <white>Admin</white> adds permanent bans and settings. <white>Owner</white> everything. Builder, Creator, Developer and Tester are departments with their own narrow powers.
+      {if:moderation-duty:staff.powers-need-admin-mode}Staff powers only work while you are in admin mode; see {topic:admin-mode}.{/if}

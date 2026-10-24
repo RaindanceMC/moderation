@@ -1,0 +1,42 @@
+id: mod-reports
+title: Reports, notes and staff chat
+summary: Staff — the report queue, closing and dismissing reports, notes on players, the staff channel and automatic reports.
+intro: |
+  The queue is the one place players write to. Read it, answer it, and spare a thought for whoever has to read the next one.
+icon: WRITABLE_BOOK
+category: Staff
+order: 51
+module: moderation
+permission: rains.moderation.reports
+aliases: [reports, queue, staffchat, sc, note, notes]
+keywords: [report, queue, close, dismiss, staff chat, auto report, join, vanish]
+commands: [reports, staffchat]
+related: [mod-tools, reports]
+sections:
+  - question: How do I work the queue?
+    title: /reports
+    text: |
+      {run:/reports list} shows everything open; {cmd:/reports <id>} opens one; {run:/mod reports} opens the queue as a menu. A report shows the reporter's text, the places both stood, and a severity from its category. Close it with what you did, or dismiss it with why nothing was there.
+      {if:moderation:reports.tell-reporter}The reporter is told how it ended — be kind in the outcome line.{/if}
+  - question: Do I get told about new reports?
+    title: Alerts
+    text: |
+      {if:moderation:reports.notify-staff}Yes, online staff are told when one arrives.{else}No; look at the queue.{/if}
+      {if:moderation:staff.open-reports-on-join}You are shown waiting reports when you join.{/if}
+  - question: What files reports by itself?
+    title: Automatic reports
+    text: |
+      {if:moderation:suspicious.enabled}Typing a watched command ({setting:moderation:suspicious.commands}) files a report, at most once per {setting:moderation:suspicious.cooldown-seconds|seconds} per player.{/if}
+      {if:moderation:xray.enabled}Suspicious mining files an x-ray report — see {cmd:/mod xray} for the suspicion page, with evidence you can replay.{/if}
+      {if:moderation:anticheat.auto-report}Persistent anti-cheat flags file one report from "the console".{/if}
+      Staff holding the bypass permission (<white>rainsmoderation.bypass</white> family, operators) are exempt.
+  - question: What are staff notes?
+    title: Notes
+    permission: rains.moderation.notes
+    text: |
+      {cmd:/mod note <player>} then type it in chat; {cmd:/mod notes <player>} lists them. The player never sees them. {if:moderation:staff.notes-on-join}Staff get a quiet line when a player with notes joins.{/if} Removing a note is on the record.
+  - question: How do I talk to staff only?
+    title: Staff chat
+    permission: rains.moderation.staffchat
+    text: |
+      {cmd:/staffchat <message>} sends one line; {run:/staffchat} alone stays in the channel until you type it again. It is marked with {setting:moderation:staff.chat-prefix}.

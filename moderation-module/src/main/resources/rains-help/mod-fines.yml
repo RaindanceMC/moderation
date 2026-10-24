@@ -1,0 +1,36 @@
+id: mod-fines
+title: Fining players
+summary: Staff — /fine, forgiving and revoking, limits, victim shares and warning costs.
+intro: |
+  A fine hurts exactly as much as the number says. Use sparingly and write a reason somebody can read in six months.
+icon: GOLD_INGOT
+category: Staff
+order: 52
+module: moderation
+permission: rains.moderation.fine
+aliases: [fine, fines, forgive, revoke]
+keywords: [money, fine, debt, victim, refund]
+commands: [fine]
+related: [mod-tools, fines-and-debt]
+sections:
+  - question: How do I fine somebody?
+    title: /fine
+    text: |
+      {cmd:/fine <player> <amount> <reason>} — amounts read <white>250</white> or <white>1.5k</white>. Add <white>victim:<name></white> at the end to give the victim a share{if:moderation:fines.victim-share-percent > 0}: {setting:moderation:fines.victim-share-percent|percent} of it, taken from the fined player; the rest is a normal fee{else} (switched off here: the whole fine is a fee){/if}.
+      The server needs an economy, or nobody can be fined.
+  - question: How much may I fine?
+    title: Limits
+    text: |
+      Moderators: up to {setting:moderation:punishments.mod-fine-max|money} (0 means no limit). Admins with <white>rains.moderation.fine.unlimited</white>: any amount.
+  - question: What if they cannot pay?
+    title: Debt
+    text: |
+      {if:moderation:fines.unpaid-becomes-debt}The balance is taken as far as it goes and the rest becomes debt the economy collects.{else}The fine is refused; nothing is taken.{/if}
+  - question: How do I undo a fine?
+    title: Forgive and revoke
+    text: |
+      {cmd:/fine revoke <player>} revokes their latest fine and gives the money back. {cmd:/fine forgive <player>} writes off their debt. Both tell the player.
+  - question: Do warnings cost money?
+    title: Warning costs
+    text: |
+      {if:moderation:punishments.warn-fine || moderation:punishments.warn-fine-percent > 0}Yes, automatically. Amounts (1st, 2nd, 3rd warning in the window; the last repeats): {setting:moderation:punishments.warn-fine}. {/if}{if:moderation:punishments.warn-fine-percent > 0}Or {setting:moderation:punishments.warn-fine-percent|percent} of the balance, whichever is larger.{/if}{if:!moderation:punishments.warn-fine && !moderation:punishments.warn-fine-percent}No, warnings are free here.{/if}

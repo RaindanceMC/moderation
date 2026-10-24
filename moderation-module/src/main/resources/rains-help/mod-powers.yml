@@ -1,0 +1,51 @@
+id: mod-powers
+title: Staff powers and world tools
+summary: Staff — vanish, god, instakill, instabreak, vault, dev mode, ore veins, mob packs, banhammer and promotions.
+intro: |
+  Great power, mandatory audit trail. Most of these are logged; all of them are noticed.
+icon: NETHERITE_SWORD
+category: Staff
+order: 54
+module: moderation
+permission: rains.moderation.vanish
+aliases: [vanish, god, ungod, instakill, instabreak, vault, dev, orevein, mob, worldtools, promote, demote, banhammer]
+keywords: [invisible, invulnerable, ore, wave, rank, appoint, mace]
+commands: [vanish, god, ungod, instakill, instabreak, vault, dev, orevein, mob, worldtools, promote, demote]
+related: [mod-tools]
+sections:
+  - question: How do I become invisible?
+    title: /vanish
+    text: |
+      {run:/vanish} hides you from players; {cmd:/vanish <player>} for somebody else, if you may. {if:moderation:staff.vanish-on-join}Staff vanish on joining.{/if}{if:moderation:staff.flight-while-vanished} Flying while vanished is allowed.{/if}
+  - question: What are god, instakill and instabreak?
+    title: Self tools
+    text: |
+      {cmd:/god [player]} / {cmd:/ungod [player]}: invulnerable until logout. {cmd:/instakill [player]} (admins): everything hit dies, pets and livestock included. {cmd:/instabreak [player]}: blocks break at once — claim protection still applies.
+  - question: What is the vault?
+    title: /vault
+    text: |
+      {run:/vault} opens an operator's personal stash. Sneak-right-click with the Banhammer puts it in; an empty hand takes it out.
+  - question: What is dev mode?
+    title: /dev
+    text: |
+      {run:/dev} toggles every permission for developers while it is on. Needs LuckPerms.
+  - question: How do I bury ore?
+    title: Ore veins
+    permission: rains.moderation.spawn.ore
+    text: |
+      Look at the ground and type {cmd:/orevein [ore] [size]} (iron_ore, 12 by default). Only natural stone and dirt are replaced, never anything built. {run:/worldtools} opens the same as a menu.
+  - question: How do I call up mobs?
+    title: Packs and waves
+    permission: rains.moderation.spawn.mobs
+    text: |
+      Where you look: {cmd:/mob pack <creature> [count]}, {cmd:/mob wave <creature> [count] [packs] [seconds]}, {run:/mob stop} ends your wave. One wave per admin at a time.
+  - question: What is the Banhammer?
+    title: Banhammer
+    permission: rains.moderation.banhammer
+    text: |
+      {if:moderation:punishments.banhammer}Killing a player with a mace named Banhammer bans them permanently on the spot. Protected accounts are immune.{else}Switched off: a named mace is just a mace.{/if}
+  - question: How do I promote staff?
+    title: Promotions
+    permission: rains.moderation.appoint
+    text: |
+      {cmd:/promote <player> [rank]} and {cmd:/demote <player>}. {if:moderation:staff.may-promote-below}You may appoint one rank below your own.{else}Only the owner hands out ranks here.{/if} {if:moderation:staff.may-demote-below}You may also take ranks from those below you.{/if} Never yourself. Both are audited.

@@ -1,0 +1,51 @@
+id: fair-play
+title: Anti-cheat and fair play
+summary: What the server watches for, what happens if the anti-cheat flags you, and what is not allowed.
+intro: |
+  Yes, I watch. Not <i>you</i> specifically — everybody, equally, and a bit boringly. Play honestly and you will never notice.
+icon: SHIELD
+category: Chat & community
+order: 43
+module: moderation
+aliases: [anticheat, anti-cheat, grim, cheat, cheating, hacks, xray, x-ray, esp, mods, client]
+keywords: [flagged, kicked, banned, unfair, hacked client, wallhack, seed, setback, rubberband]
+related: [punishments, reports]
+sections:
+  - question: Is the server watching me?
+    title: What is watched
+    text: |
+      Movement, fighting and building are checked by an anti-cheat, mining patterns are looked at for x-ray, and public chat is logged for the staff. Staff can look up what flagged whom, and where. Honest play produces nothing worth reading.
+  - question: Why did I get set back?
+    title: Rubber-banding
+    text: |
+      The anti-cheat sometimes pulls you back to where it thinks you should be. That is usually lag or a bad connection, not an accusation. Flags raised while the server lagged below {setting:moderation:anticheat.min-tps|number} ticks per second do not count against you.
+  - question: Can I be kicked or banned automatically?
+    title: Automatic action
+    text: |
+      {if:moderation:anticheat.auto-kick}Kicks: yes — a player who piles up flags in one kind of check gets kicked, with the check named on the screen.{else}Kicks: no, the anti-cheat only alerts staff.{/if}
+      {if:moderation:anticheat.auto-ban}Bans: yes, for repeated serious flags.{else}Bans: no — a ban is always a human decision.{/if}
+      {if:moderation:anticheat.auto-report}Persistent flagging files a report for the staff to look at; that report never punishes by itself.{/if}
+  - question: Which mods and clients are refused?
+    title: Clients
+    text: |
+      Hacked clients are not allowed: the server refuses clients that announce themselves as one{if:moderation:anticheat.kick-blocked-clients} and kicks them on joining{/if}. Refused names include: {setting:moderation:anticheat.blocked-brands}.
+      Ordinary mods (maps, shaders, performance) are fine. {if:moderation:anticheat.announce-brands}Staff are told which client every player joins with.{/if}
+  - question: Why do players vanish behind walls?
+    title: Hidden behind walls
+    when: moderation:anticheat.anti-esp
+    text: |
+      Anti-ESP: a player you could not possibly see — solid blocks in every line between you — is not sent to your client at all, so wallhacks have nothing to draw. Inside {setting:moderation:anticheat.anti-esp-range|count} blocks it applies; they still show in the player list, and appear the moment they could be seen. If somebody blinks in late around a corner, that is why.
+  - question: Why was my command flagged?
+    title: Watched commands
+    when: moderation:suspicious.enabled
+    text: |
+      Some commands only make sense with an outside cheating tool. Typing one of <white>{setting:moderation:suspicious.commands}</white> files an automatic report for the staff. It is not a punishment, but a moderator will have a look. Staff members are exempt.
+  - question: Is mining watched?
+    title: X-ray
+    when: moderation:xray.enabled
+    text: |
+      Yes. Finding diamonds is fine. What is looked at is how mining goes over time — whether somebody finds valuable ore far more often than honest mining ever could. Honest caving and strip mining never trips it, and a report only goes to a human.
+  - question: What if I am wrongly accused?
+    title: Mistakes
+    text: |
+      Staff decide, and everything is kept as evidence both ways. If you think you were punished unfairly, see {topic:punishments}. Do not argue in public chat; it does not help.
