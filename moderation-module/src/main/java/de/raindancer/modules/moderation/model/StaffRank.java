@@ -60,6 +60,9 @@ public enum StaffRank {
     public static final String HUNGERGAMES_GAMEMASTER = "hungergames.gamemaster";
     public static final String HUNGERGAMES_ADMIN = "hungergames.admin";
     public static final String TELEPORT = "minecraft.command.teleport";
+    /** Vanilla /gamemode. Essentials' essentials.gamemode.<mode> nodes only narrow it down; they never grant it. */
+    public static final String GAME_MODE = "minecraft.command.gamemode";
+    public static final String GAME_MODES_PREFIX = "essentials.gamemode.";
     public static final String ANTICHEAT_LOOK = "rainsanticheat.command";
     public static final String ANTICHEAT_ALERTS = "rainsanticheat.alerts";
     public static final String ANTICHEAT_MANAGE = "rainsanticheat.manage";
@@ -112,6 +115,9 @@ public enum StaffRank {
                 everything.add(ANTICHEAT_LOOK);
                 everything.add(ANTICHEAT_ALERTS);
                 everything.add(WHITELIST);
+                everything.add(GAME_MODE);
+                everything.add(GAME_MODES_PREFIX + "survival");
+                everything.add(GAME_MODES_PREFIX + "spectator");
             }
             if (weight >= ADMIN.weight) {
                 everything.add(WARP_MANAGE);
@@ -119,6 +125,7 @@ public enum StaffRank {
                 everything.add(HUNGERGAMES_ADMIN);
                 everything.add(ANTICHEAT_MANAGE);
                 everything.add(ADMIN_MODE_OTHERS);
+                everything.add(GAME_MODES_PREFIX + "creative");
                 everything.addAll(CLAIM_BYPASSES);
             }
             // The owner adds nothing: an operator already holds everything.
@@ -167,7 +174,7 @@ public enum StaffRank {
             }
         }
         if (this == BUILDER) {
-            seed = seed.grantingIn("minecraft.command.gamemode", "world", BUILD_WORLD);
+            seed = seed.grantingIn(GAME_MODE, "world", BUILD_WORLD);
         }
         if (this == DEV) {
             // Everything in dev mode — except WorldEdit, which nobody gets unless the owner hands it out.

@@ -103,6 +103,21 @@ class StaffRankTest {
         }
 
         @Test
+        @DisplayName("a mod may type /gamemode for survival and spectator, an admin for creative too; support not at all")
+        void gameModes() {
+            assertThat(StaffRank.SUPPORT.nodes()).doesNotContain(StaffRank.GAME_MODE)
+                    .noneMatch(node -> node.startsWith("essentials.gamemode."));
+            // essentials.gamemode.* only limits the modes — without vanilla's node /gamemode is refused outright.
+            assertThat(StaffRank.MOD.nodes()).contains(StaffRank.GAME_MODE,
+                    "essentials.gamemode.survival", "essentials.gamemode.spectator")
+                    .doesNotContain("essentials.gamemode.creative");
+            assertThat(StaffRank.ADMIN.nodes()).contains("essentials.gamemode.creative");
+            assertThat(StaffRank.MOD.seed().nodes())
+                    .filteredOn(node -> node.permission().equals(StaffRank.GAME_MODE))
+                    .singleElement().satisfies(node -> assertThat(node.context()).containsEntry(Duty.POWERS, Duty.ON));
+        }
+
+        @Test
         @DisplayName("only an admin changes the rules: config, permanent bans, the anticheat's checks")
         void adminUpward() {
             assertThat(StaffRank.MOD.nodes()).doesNotContain(ModerationPermission.CONFIG.node(),
