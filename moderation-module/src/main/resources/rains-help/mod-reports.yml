@@ -29,7 +29,7 @@ sections:
       {if:moderation:suspicious.enabled}Typing a watched command ({setting:moderation:suspicious.commands}) files a report, at most once per {setting:moderation:suspicious.cooldown-seconds|seconds} per player.{/if}
       {if:moderation:xray.enabled}Suspicious mining files an x-ray report — see {cmd:/mod xray} for the suspicion page, with evidence you can replay.{/if}
       {if:moderation:anticheat.auto-report}Persistent anti-cheat flags file one report from "the console".{/if}
-      Staff holding the bypass permission (<white>rainsmoderation.bypass</white> family, operators) are exempt.
+      Staff holding the bypass permission (<white>rainsmoderation.suspicious.bypass</white>, and operators) are exempt.
   - question: What are staff notes?
     title: Notes
     permission: rains.moderation.notes
