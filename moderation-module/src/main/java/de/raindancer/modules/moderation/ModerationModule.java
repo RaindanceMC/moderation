@@ -71,7 +71,7 @@ import java.util.UUID;
  */
 public final class ModerationModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.7.0")
+    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.8.0")
             .describedAs("Bans, mutes, reports, staff notes and the screens for them — over "
                     + "RainsCore's punishments, which stay whether or not this is installed")
             .by("Raindancer118");
@@ -385,6 +385,20 @@ public final class ModerationModule implements FlexModule {
                 fineService, buyoffService, logSearch, attemptAlerts,
                 () -> staffChatListener, network, savedInvsee, staffAlerts,
                 settings::current, new LiveScreens());
+
+        // Screens for /screen — Core 2.10.0; on an older Core there are simply none.
+        try {
+            var screens = context.core().screens();
+            if (screens != null) {
+                new de.raindancer.modules.moderation.service.ModerationScreens(server, context.core().vanish(),
+                        roster, context.core().punishments(), this::standingRule, fineService)
+                        .register(screens, context.plugin());
+                context.closeWith(() -> de.raindancer.modules.moderation.service.ModerationScreens.KINDS
+                        .forEach(screens::unregister));
+            }
+        } catch (LinkageError olderCore) {
+            context.log().info("RainsCore is older than 2.10.0: no Moderation screens until it is updated.");
+        }
 
         // Rules broken where no moderator saw it (the anti-cheat) get the same ladder and count.
         de.raindancer.core.moderation.rules.RuleBreaches.Judge ruleJudge = services.ruleBreaches().judge(server.getConsoleSender());
