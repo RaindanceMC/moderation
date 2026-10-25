@@ -233,6 +233,25 @@ class StaffRankTest {
         }
 
         @Test
+        @DisplayName("a builder in admin mode may switch between creative and survival, anywhere")
+        void builderCreativeInAdminMode() {
+            GroupSeed seed = StaffRank.BUILDER.seed();
+            for (String node : List.of(StaffRank.GAME_MODE, StaffRank.GAME_MODES_PREFIX + "creative",
+                    StaffRank.GAME_MODES_PREFIX + "survival")) {
+                assertThat(seed.nodes()).as(node).anySatisfy(granted -> {
+                    assertThat(granted.permission()).isEqualTo(node);
+                    assertThat(granted.value()).isTrue();
+                    assertThat(granted.context()).containsExactlyEntriesOf(java.util.Map.of(Duty.ADMIN, Duty.ON));
+                });
+            }
+            assertThat(seed.nodes()).as("never creative on their own survival side")
+                    .noneSatisfy(granted -> {
+                        assertThat(granted.permission()).startsWith(StaffRank.GAME_MODES_PREFIX);
+                        assertThat(granted.everywhere()).isTrue();
+                    });
+        }
+
+        @Test
         @DisplayName("nobody but a builder is given WorldEdit by default")
         void noWorldEdit() {
             for (StaffRank rank : StaffRank.values()) {

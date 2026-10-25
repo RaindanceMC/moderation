@@ -35,7 +35,7 @@ public enum StaffRank {
             "The server operator: every permission of every plugin, and the vanilla commands."),
 
     BUILDER("Builder", 0, "yellow", Material.BRICKS,
-            "Builds the hub, the maps and the event stages. Creative in the build world only, WorldEdit in admin mode."),
+            "Builds the hub, the maps and the event stages. Creative in the build world, and creative and WorldEdit anywhere in admin mode."),
     CREATOR("Creator", 0, "light_purple", Material.SPYGLASS,
             "Makes videos and streams about the server."),
     DEV("Developer", 0, "dark_aqua", Material.COMMAND_BLOCK,
@@ -181,6 +181,12 @@ public enum StaffRank {
             seed = seed.grantingIn(GAME_MODE, "world", BUILD_WORLD);
             // WorldEdit only while in admin mode: a builder's own survival side never carries a wand.
             seed = seed.grantingIn(WORLDEDIT, Duty.ADMIN, Duty.ON);
+            // Creative anywhere, but in admin mode only: its inventory is kept apart, and leaving puts their own
+            // game mode back. Survival too, or holding only creative would lock them in it (essentials narrows
+            // /gamemode to the modes held).
+            seed = seed.grantingIn(GAME_MODE, Duty.ADMIN, Duty.ON)
+                    .grantingIn(GAME_MODES_PREFIX + "creative", Duty.ADMIN, Duty.ON)
+                    .grantingIn(GAME_MODES_PREFIX + "survival", Duty.ADMIN, Duty.ON);
         }
         if (this == DEV) {
             // Everything in dev mode — except WorldEdit, which nobody gets unless the owner hands it out.
