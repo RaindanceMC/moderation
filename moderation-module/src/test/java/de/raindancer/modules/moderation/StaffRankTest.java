@@ -217,9 +217,28 @@ class StaffRankTest {
         }
 
         @Test
-        @DisplayName("nobody is given WorldEdit by default")
+        @DisplayName("a builder has WorldEdit, but only while in admin mode — and may go into admin mode")
+        void builderWorldEdit() {
+            GroupSeed seed = StaffRank.BUILDER.seed();
+            assertThat(seed.nodes()).anySatisfy(node -> {
+                assertThat(node.permission()).isEqualTo("worldedit.*");
+                assertThat(node.value()).isTrue();
+                assertThat(node.context()).containsExactlyEntriesOf(java.util.Map.of(Duty.ADMIN, Duty.ON));
+            });
+            assertThat(seed.nodes()).noneSatisfy(node -> {
+                assertThat(node.permission()).startsWith("worldedit");
+                assertThat(node.everywhere()).isTrue();
+            });
+            assertThat(seeded(seed)).contains(StaffRank.ADMIN_MODE);
+        }
+
+        @Test
+        @DisplayName("nobody but a builder is given WorldEdit by default")
         void noWorldEdit() {
             for (StaffRank rank : StaffRank.values()) {
+                if (rank == StaffRank.BUILDER) {
+                    continue;
+                }
                 assertThat(rank.seed().nodes()).noneSatisfy(node -> {
                     assertThat(node.permission()).startsWith("worldedit");
                     assertThat(node.value()).isTrue();

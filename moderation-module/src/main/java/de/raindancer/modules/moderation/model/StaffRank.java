@@ -35,7 +35,7 @@ public enum StaffRank {
             "The server operator: every permission of every plugin, and the vanilla commands."),
 
     BUILDER("Builder", 0, "yellow", Material.BRICKS,
-            "Builds the hub, the maps and the event stages. Creative in the build world only."),
+            "Builds the hub, the maps and the event stages. Creative in the build world only, WorldEdit in admin mode."),
     CREATOR("Creator", 0, "light_purple", Material.SPYGLASS,
             "Makes videos and streams about the server."),
     DEV("Developer", 0, "dark_aqua", Material.COMMAND_BLOCK,
@@ -77,6 +77,8 @@ public enum StaffRank {
     public static final String DEV_MODE = "rains.moderation.dev";
     /** What a rung holds off duty too; everything else of theirs needs {@code rains:powers=on}. */
     public static final Set<String> ALWAYS = Set.of(ModerationPermission.STAFF_CHAT.node(), ADMIN_MODE);
+    /** Every WorldEdit command — a builder's, in admin mode. */
+    public static final String WORLDEDIT = "worldedit.*";
     /** Building in a locked world (hub, maps) while in creative — Core's LockedWorlds. */
     public static final String LOCKED_WORLDS_BUILD = "rainscore.lockedworlds.build";
 
@@ -141,6 +143,8 @@ public enum StaffRank {
                 everything.add(WARP_STAFF);
                 everything.add(ModerationPermission.FLY.node());
                 everything.add(LOCKED_WORLDS_BUILD);
+                // Admin mode is where a builder's WorldEdit lives (see seed()).
+                everything.add(ADMIN_MODE);
             }
             case DEV -> {
                 everything.add(ModerationPermission.STAFF_CHAT.node());
@@ -175,6 +179,8 @@ public enum StaffRank {
         }
         if (this == BUILDER) {
             seed = seed.grantingIn(GAME_MODE, "world", BUILD_WORLD);
+            // WorldEdit only while in admin mode: a builder's own survival side never carries a wand.
+            seed = seed.grantingIn(WORLDEDIT, Duty.ADMIN, Duty.ON);
         }
         if (this == DEV) {
             // Everything in dev mode — except WorldEdit, which nobody gets unless the owner hands it out.
