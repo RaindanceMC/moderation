@@ -252,6 +252,21 @@ class StaffRankTest {
         }
 
         @Test
+        @DisplayName("a builder in admin mode has the vanilla building commands — and nothing that reaches other players")
+        void builderCommandsInAdminMode() {
+            GroupSeed seed = StaffRank.BUILDER.seed();
+            for (String command : List.of("setblock", "fill", "clone", "fillbiome", "place", "summon", "give",
+                    "item")) {
+                assertThat(seed.nodes()).as(command).anySatisfy(granted -> {
+                    assertThat(granted.permission()).isEqualTo("minecraft.command." + command);
+                    assertThat(granted.context()).containsExactlyEntriesOf(java.util.Map.of(Duty.ADMIN, Duty.ON));
+                });
+            }
+            assertThat(StaffRank.BUILDER_COMMANDS).doesNotContain("minecraft.command.kill",
+                    "minecraft.command.teleport", "minecraft.command.op", "minecraft.command.gamerule");
+        }
+
+        @Test
         @DisplayName("nobody but a builder is given WorldEdit by default")
         void noWorldEdit() {
             for (StaffRank rank : StaffRank.values()) {

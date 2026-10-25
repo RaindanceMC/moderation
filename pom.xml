@@ -22,7 +22,7 @@
     <properties>
         <modules-wrapper.version>1.9.0</modules-wrapper.version>
         <rainscore.version>2.4.0</rainscore.version>
-        <moderation-module.version>3.6.0</moderation-module.version>
+        <moderation-module.version>3.7.0</moderation-module.version>
     </properties>
 
     <modules>

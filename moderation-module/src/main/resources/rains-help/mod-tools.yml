@@ -56,5 +56,5 @@ sections:
   - question: What are the staff ranks?
     title: Ranks
     text: |
-      <white>Support</white> warns and reads records, never stops anybody. <white>Moderator</white> adds mute, kick, tempban, freeze, vanish. <white>Admin</white> adds permanent bans and settings. <white>Owner</white> everything. Builder, Creator, Developer and Tester are departments with their own narrow powers — a Builder gets creative and WorldEdit, but only while in admin mode ({run:/admin}).
+      <white>Support</white> warns and reads records, never stops anybody. <white>Moderator</white> adds mute, kick, tempban, freeze, vanish. <white>Admin</white> adds permanent bans and settings. <white>Owner</white> everything. Builder, Creator, Developer and Tester are departments with their own narrow powers — a Builder gets creative, WorldEdit and /setblock, /fill, /clone and the like, but only while in admin mode ({run:/admin}).
       {if:moderation-duty:staff.powers-need-admin-mode}Staff powers only work while you are in admin mode; see {topic:admin-mode}.{/if}

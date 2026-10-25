@@ -172,7 +172,7 @@
         <!-- 3.2.1: the on-duty switch has its own settings topic (Moderation → Staff → On duty) — 3.2.0 refused to start. -->
         <!-- 3.3.1: 3.3.0 taken back — the dev group is not given /dev again behind the owner's back; it is edited in LuckPerms like every group. Same behaviour as 3.2.1. -->
         <!-- 3.3.2: a new mod group starts with vanilla /gamemode (survival, spectator; an admin creative too) — essentials.gamemode.* alone only narrowed a command nobody held. -->
-        <plugin.version>3.6.0</plugin.version>
+        <plugin.version>3.7.0</plugin.version>
     </properties>
 
     <dependencies>

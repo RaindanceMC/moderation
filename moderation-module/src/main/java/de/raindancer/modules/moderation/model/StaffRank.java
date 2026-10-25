@@ -35,7 +35,7 @@ public enum StaffRank {
             "The server operator: every permission of every plugin, and the vanilla commands."),
 
     BUILDER("Builder", 0, "yellow", Material.BRICKS,
-            "Builds the hub, the maps and the event stages. Creative in the build world, and creative and WorldEdit anywhere in admin mode."),
+            "Builds the hub, the maps and the event stages. Creative in the build world; creative, WorldEdit and the building commands anywhere in admin mode."),
     CREATOR("Creator", 0, "light_purple", Material.SPYGLASS,
             "Makes videos and streams about the server."),
     DEV("Developer", 0, "dark_aqua", Material.COMMAND_BLOCK,
@@ -77,6 +77,12 @@ public enum StaffRank {
     public static final String DEV_MODE = "rains.moderation.dev";
     /** What a rung holds off duty too; everything else of theirs needs {@code rains:powers=on}. */
     public static final Set<String> ALWAYS = Set.of(ModerationPermission.STAFF_CHAT.node(), ADMIN_MODE);
+    /**
+     * The vanilla commands a builder works with in admin mode — blocks, structures, entities and items. Nothing
+     * that reaches other players (kill, teleport) or the server's rules (gamerule, time, weather).
+     */
+    public static final List<String> BUILDER_COMMANDS = java.util.stream.Stream.of("setblock", "fill", "clone",
+            "fillbiome", "place", "summon", "give", "item").map(command -> "minecraft.command." + command).toList();
     /** Every WorldEdit command — a builder's, in admin mode. */
     public static final String WORLDEDIT = "worldedit.*";
     /** Building in a locked world (hub, maps) while in creative — Core's LockedWorlds. */
@@ -187,6 +193,9 @@ public enum StaffRank {
             seed = seed.grantingIn(GAME_MODE, Duty.ADMIN, Duty.ON)
                     .grantingIn(GAME_MODES_PREFIX + "creative", Duty.ADMIN, Duty.ON)
                     .grantingIn(GAME_MODES_PREFIX + "survival", Duty.ADMIN, Duty.ON);
+            for (String command : BUILDER_COMMANDS) {
+                seed = seed.grantingIn(command, Duty.ADMIN, Duty.ON);
+            }
         }
         if (this == DEV) {
             // Everything in dev mode — except WorldEdit, which nobody gets unless the owner hands it out.
