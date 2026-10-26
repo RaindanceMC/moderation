@@ -42,7 +42,7 @@ import java.util.function.LongSupplier;
  * a probability. A report is filed once mining is less likely than one in ten to the
  * {@code xray.report-score} for somebody who cannot see through stone.
  */
-public final class XrayEvidenceService implements IModerationService {
+public final class XrayEvidenceService implements IModerationService, ViolationService.MiningRecords {
 
     private static final int CENSUS_RADIUS = 8;
 
@@ -285,6 +285,25 @@ public final class XrayEvidenceService implements IModerationService {
         paths.remove(player);
         latest.remove(player);
         honeypots.forget(player);
+    }
+
+    /** {@code /ac reset}: their ledger is gone, from disk too on the next save. */
+    @Override
+    public void clear(UUID player) {
+        ledgers.forget(player);
+        forget(player);
+    }
+
+    /** {@code /ac fresh}: the verdict counts only digging from now on; their finds stay to be looked at. */
+    @Override
+    public void measureAfresh(UUID player, long fromMillis) {
+        MiningLedger ledger = ledgers.find(player);
+        if (ledger != null) {
+            ledger.measureAfresh(fromMillis);
+        }
+        seen.remove(player);
+        paths.remove(player);
+        latest.remove(player);
     }
 
     public void load() {

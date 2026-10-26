@@ -69,4 +69,30 @@ class MiningLedgerTest {
         assertThat(ledger.finds()).containsExactly(
                 new MiningLedger.Find("world_nether", 7, 30, 7, MiningLedger.BAIT, 1_760_000_000_000L));
     }
+
+    @Test
+    @DisplayName("measured afresh: every count the verdict reads is zero, the finds and tunnels stay as history")
+    void measuredAfresh() {
+        MiningLedger ledger = new MiningLedger(0);
+        RockBand band = RockBand.of("NORMAL", 8);
+        ledger.revealed(band, 40);
+        ledger.vein(band, OreKind.DIAMOND);
+        ledger.bait(0.5, 3);
+        ledger.turn(true);
+        ledger.dug("world", 1, -50, 1, OreKind.DIAMOND.ordinal(), 100);
+
+        ledger.measureAfresh(9_000);
+
+        assertThat(ledger.totalRevealed()).isZero();
+        assertThat(ledger.revealedByBand().values()).allMatch(value -> value == 0);
+        assertThat(ledger.veinsByBand().values()).allMatch(Map::isEmpty);
+        assertThat(ledger.baitReached()).isZero();
+        assertThat(ledger.baitExpected()).isZero();
+        assertThat(ledger.turnsToward()).isZero();
+        assertThat(ledger.turnsAway()).isZero();
+        assertThat(ledger.freshFromMillis()).isEqualTo(9_000);
+        assertThat(ledger.updatedMillis()).isEqualTo(9_000);
+        assertThat(ledger.finds()).hasSize(1);
+        assertThat(ledger.trail()).hasSize(1);
+    }
 }

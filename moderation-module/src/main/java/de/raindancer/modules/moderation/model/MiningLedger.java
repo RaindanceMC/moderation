@@ -36,6 +36,8 @@ public final class MiningLedger {
     private double turnsAway;
     private double totalRevealed;
     private long updatedMillis;
+    /** When staff last had them measured afresh (epoch millis, 0 for never): finds from before are history only. */
+    private long freshFromMillis;
     /** Dig positions, oldest first: {x, y, z, kind ({@link #ROCK}, ore ordinal, {@link #BAIT})} — for the replay. */
     private final Deque<int[]> trail = new ArrayDeque<>();
     private String trailWorld = "";
@@ -64,6 +66,31 @@ public final class MiningLedger {
         turnsAway *= factor;
         totalRevealed *= factor;
         updatedMillis = nowMillis;
+    }
+
+    /**
+     * Every count the verdict reads starts from zero; the trail and the finds stay, so a moderator can
+     * still look at what came before.
+     */
+    public synchronized void measureAfresh(long nowMillis) {
+        revealed.clear();
+        veins.clear();
+        baitReached = 0;
+        baitExpected = 0;
+        turnsToward = 0;
+        turnsAway = 0;
+        totalRevealed = 0;
+        updatedMillis = nowMillis;
+        freshFromMillis = nowMillis;
+    }
+
+    public synchronized long freshFromMillis() {
+        return freshFromMillis;
+    }
+
+    /** For loading from disk. */
+    public synchronized void restoreFreshFrom(long millis) {
+        freshFromMillis = millis;
     }
 
     public synchronized void revealed(RockBand band, int count) {

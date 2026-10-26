@@ -133,6 +133,12 @@ public final class XrayReviewMenu extends ModerationList<XrayEvidenceService.Fin
             lore.add("<dark_gray>Not enough digging seen yet to say anything.");
         }
         lore.add("<dark_gray>Bait ores around them now: " + evidence.baitsAround(subject));
+        var measured = evidence.ledgerOf(subject);
+        if (measured != null && measured.freshFromMillis() > 0) {
+            lore.add("<aqua>Measured afresh " + java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm", Locale.ENGLISH)
+                    .format(java.time.Instant.ofEpochMilli(measured.freshFromMillis()).atZone(java.time.ZoneId.systemDefault())));
+            lore.add("<dark_gray>Finds from before are history; they no longer count.");
+        }
         toolbar(3, Icons.of(Material.SPYGLASS, "<yellow>The evidence", lore), click -> { });
         var ledger = evidence.ledgerOf(subject);
         toolbar(5, ledger != null, Icons.of(Material.ENDER_EYE, "<yellow>Show me their tunnels",

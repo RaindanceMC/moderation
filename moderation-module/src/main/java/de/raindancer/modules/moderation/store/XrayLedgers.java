@@ -125,6 +125,7 @@ public final class XrayLedgers {
                 ledger.restore(revealed, veins, row.getDouble("bait-reached"), row.getDouble("bait-expected"),
                         row.getDouble("toward"), row.getDouble("away"), row.getLong("updated"),
                         row.getString("trail-world", ""), trail, finds);
+                ledger.restoreFreshFrom(row.getLong("fresh-from"));
                 ledgers.put(who, ledger);
                 String name = row.getString("name");
                 if (name != null && !name.isEmpty()) {
@@ -141,6 +142,9 @@ public final class XrayLedgers {
             String key = "players." + who;
             yaml.set(key + ".name", names.getOrDefault(who, ""));
             yaml.set(key + ".updated", ledger.updatedMillis());
+            if (ledger.freshFromMillis() > 0) {
+                yaml.set(key + ".fresh-from", ledger.freshFromMillis());
+            }
             yaml.set(key + ".bait-reached", ledger.baitReached());
             yaml.set(key + ".bait-expected", ledger.baitExpected());
             yaml.set(key + ".toward", ledger.turnsToward());

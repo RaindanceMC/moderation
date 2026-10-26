@@ -119,21 +119,21 @@ public final class PlayerChecksMenu extends PaginatedMenu<CheckType> implements 
                         "<dark_gray>Evidence and punishments are kept;", "<dark_gray>the log marks what came before."),
                 "Needs rainsanticheat.manage", click -> new ConfirmMenu(viewer, services.chat().brand(), this,
                         "Measure " + track.name() + " afresh?", List.of("<gray>Every check starts from zero for them.",
-                        "<gray>Their evidence and punishments stay as history."),
+                        "<gray>X-ray counts only their digging from now on.", "<gray>Their evidence, finds and punishments stay as history."),
                         () -> {
                             services.violations().measureAfresh(track.id(), track, System.currentTimeMillis());
                             services.alerts().freshStart(track.id());
                             services.messages().send(viewer, "anticheat.fresh", "player", track.name());
                         }).open());
         var clear = Icons.of(Material.LAVA_BUCKET, "<red>Clear their record", "<gray>A fresh start: violation levels",
-                "<gray>and evidence are deleted.", "<dark_gray>Kicks and bans stay in their history.");
+                "<gray>evidence and mining evidence are deleted.", "<dark_gray>Kicks and bans stay in their history.");
         danger(manage ? clear : Icons.locked(clear, "Needs rainsanticheat.manage"), click -> {
             if (!manage) {
                 services.messages().send(viewer, "anticheat.no-permission");
                 return;
             }
             new ConfirmScreen(services.chat().brand(), viewer, this, "Clear " + track.name() + "'s whole record?",
-                    List.of("<gray>Every family starts from zero for them,", "<gray>and their evidence is gone for good."),
+                    List.of("<gray>Every family starts from zero for them,", "<gray>and their evidence and mining record are gone for good."),
                     "<dark_gray>This cannot be undone.", () -> {
                         services.violations().freshStart(track.id(), track);
                         services.messages().send(viewer, "anticheat.reset", "player", track.name());

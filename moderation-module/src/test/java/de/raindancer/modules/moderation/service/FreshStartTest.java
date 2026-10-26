@@ -110,4 +110,43 @@ class FreshStartTest {
         evidence.add(cheater, "Cheater", new Evidence(4_500L, "reach", 2.0, "detail", "world", 1, 64, 2, 40, 20.0));
         assertThat(evidence.since(cheater)).extracting(Evidence::check).containsExactly("reach");
     }
+
+    /** What the x-ray side was asked to do, in order. */
+    private static final class RecordedMining implements ViolationService.MiningRecords {
+        final List<String> calls = new java.util.ArrayList<>();
+
+        @Override
+        public void clear(UUID player) {
+            calls.add("clear " + player);
+        }
+
+        @Override
+        public void measureAfresh(UUID player, long fromMillis) {
+            calls.add("fresh " + player + " " + fromMillis);
+        }
+    }
+
+    @Test
+    @DisplayName("/ac reset also wipes their mining evidence, online or not")
+    void resetWipesMining() {
+        ViolationService violations = new ViolationService(new ActionRule(), null, null, evidenceLog());
+        RecordedMining mining = new RecordedMining();
+        violations.miningTo(mining);
+
+        violations.freshStart(cheater, null);
+
+        assertThat(mining.calls).containsExactly("clear " + cheater);
+    }
+
+    @Test
+    @DisplayName("/ac fresh also measures their mining afresh from the same moment")
+    void freshMeasuresMiningAfresh() {
+        ViolationService violations = new ViolationService(new ActionRule(), null, null, evidenceLog());
+        RecordedMining mining = new RecordedMining();
+        violations.miningTo(mining);
+
+        violations.measureAfresh(cheater, null, 4_000);
+
+        assertThat(mining.calls).containsExactly("fresh " + cheater + " 4000");
+    }
 }

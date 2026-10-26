@@ -49,7 +49,8 @@ public final class AntiCheat {
      * Starts it inside the moderation module, on the module's own settings (their anti-cheat part). Everything it
      * starts is stopped through {@code context}.
      */
-    public static void start(ModuleContext context, SettingsStore<ModerationSettings> settings) {
+    public static void start(ModuleContext context, SettingsStore<ModerationSettings> settings,
+                             ViolationService.MiningRecords mining) {
         Path folder = context.plugin().getDataFolder().toPath().getParent().resolve(FORMER_PLUGIN);
         LegacySettings.carryOver(context.core(), folder, settings, context.log());
         var messages = context.core().messages();
@@ -75,6 +76,7 @@ public final class AntiCheat {
         PunishService punishments = new PunishService(context.plugin(), context.core(), messages, alerts);
         ViolationService violations = new ViolationService(new ActionRule(), alerts, punishments, evidence);
         violations.ledgerTo(ledger);
+        violations.miningTo(mining);
         AutoReportService autoReports = new AutoReportService(System::currentTimeMillis);
         violations.reportsTo(autoReports);
         PacketTap tap = new PacketTap(context.log());

@@ -26,6 +26,14 @@ public final class ViolationService implements IModerationService {
 
     private volatile AutoReportService reports;
     private volatile de.raindancer.modules.moderation.store.ViolationLedger ledger;
+    private volatile MiningRecords mining;
+
+    /** The x-ray side's per-player record, reset and measured afresh together with the anti-cheat's. */
+    public interface MiningRecords {
+        void clear(java.util.UUID player);
+
+        void measureAfresh(java.util.UUID player, long fromMillis);
+    }
 
     public ViolationService(ActionRule rule, AlertService alerts, PunishService punishments, EvidenceLog evidence) {
         this.rule = rule;
@@ -107,6 +115,10 @@ public final class ViolationService implements IModerationService {
     }
 
     /** Where levels go to be shared with the other servers of the network; without one, they stay on this server. */
+    public void miningTo(MiningRecords records) {
+        this.mining = records;
+    }
+
     public void ledgerTo(de.raindancer.modules.moderation.store.ViolationLedger network) {
         this.ledger = network;
     }
@@ -138,7 +150,7 @@ public final class ViolationService implements IModerationService {
     }
 
     /**
-     * Forgets everything the anti-cheat holds against a player: levels and evidence. The track
+     * Forgets everything the anti-cheat holds against a player: levels, evidence and their mining ledger. The track
      * is null for a player who is offline, who has no levels to clear.
      */
     public void freshStart(java.util.UUID player, PlayerTrack track) {
@@ -147,6 +159,10 @@ public final class ViolationService implements IModerationService {
         }
         gatherClear(player);
         evidence.clear(player);
+        MiningRecords toClear = mining;
+        if (toClear != null) {
+            toClear.clear(player);
+        }
         if (punishments != null) {
             punishments.forgive(player);
         }
@@ -164,6 +180,10 @@ public final class ViolationService implements IModerationService {
         }
         gatherClear(player);
         evidence.measureFrom(player, nowMillis);
+        MiningRecords toMeasure = mining;
+        if (toMeasure != null) {
+            toMeasure.measureAfresh(player, nowMillis);
+        }
         forget(player);
     }
 

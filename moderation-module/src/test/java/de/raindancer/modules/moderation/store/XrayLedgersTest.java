@@ -47,4 +47,35 @@ class XrayLedgersTest {
 
         assertThat(loaded.find(WHO).finds()).containsExactly(new MiningLedger.Find("world", 1, -50, 2, MiningLedger.BAIT, 0));
     }
+
+    @Test
+    @DisplayName("when somebody was measured afresh survives a restart")
+    void freshFromSurvivesRestart(@TempDir Path folder) {
+        XrayLedgers saved = new XrayLedgers(folder, () -> 0L);
+        saved.of(WHO, "Miner").measureAfresh(1_760_000_000_000L);
+        assertThat(saved.flush()).isTrue();
+
+        XrayLedgers loaded = new XrayLedgers(folder, () -> 0L);
+        loaded.load();
+
+        assertThat(loaded.find(WHO).freshFromMillis()).isEqualTo(1_760_000_000_000L);
+    }
+
+    @Test
+    @DisplayName("a forgotten ledger is gone from disk too, and nobody else's goes with it")
+    void forgottenIsGoneFromDisk(@TempDir Path folder) {
+        UUID other = UUID.fromString("0f0c1a2b-3c4d-4e5f-8a9b-0c1d2e3f4a5b");
+        XrayLedgers saved = new XrayLedgers(folder, () -> 0L);
+        saved.of(WHO, "Miner").dug("world", 1, -50, 1, MiningLedger.BAIT, 0);
+        saved.of(other, "Other").dug("world", 2, -50, 2, MiningLedger.BAIT, 0);
+        assertThat(saved.flush()).isTrue();
+
+        saved.forget(WHO);
+        assertThat(saved.flush()).isTrue();
+
+        XrayLedgers loaded = new XrayLedgers(folder, () -> 0L);
+        loaded.load();
+        assertThat(loaded.find(WHO)).isNull();
+        assertThat(loaded.find(other)).isNotNull();
+    }
 }
