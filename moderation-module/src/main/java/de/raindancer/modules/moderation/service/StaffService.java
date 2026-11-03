@@ -212,6 +212,11 @@ public final class StaffService implements IModerationService {
         this.dutyOps = store;
     }
 
+    /** An owner of the server: the owner rank, or an operator kept for duty (op only in admin mode). */
+    public boolean isOwner(UUID who) {
+        return keptForDuty.contains(who) || roster.rankOf(who).filter(rank -> rank == StaffRank.OWNER).isPresent();
+    }
+
     /** Reads this server's operators kept for duty; off the world's threads. */
     public boolean loadDutyOps() {
         DutyOpStore store = dutyOps;

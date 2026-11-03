@@ -71,7 +71,7 @@ import java.util.UUID;
  */
 public final class ModerationModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.11.0")
+    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.12.0")
             .describedAs("Bans, mutes, reports, staff notes and the screens for them — over "
                     + "RainsCore's punishments, which stay whether or not this is installed")
             .by("Raindancer118");
@@ -504,6 +504,15 @@ public final class ModerationModule implements FlexModule {
 
         // Grim's flags, the network's record of them, anti-ESP and the client policy: one module with moderation.
         AntiCheatServices antiCheat = AntiCheat.start(context, settings, xrayEvidence);
+        // /seed and the like from anybody but an owner, staff too: a warning, then a ban, on the record.
+        var attemptSettings = context.settings(CheatAttemptSettings.class, CheatAttemptSettings.DEFAULTS);
+        var attemptTries = new de.raindancer.modules.moderation.store.RuleOffences(
+                context.dataFolder().resolve("cheat-attempts.yml"));
+        attemptTries.load();
+        context.closeWith(attemptTries::close);
+        context.listener(new de.raindancer.modules.moderation.listener.CheatAttemptListener(
+                new de.raindancer.modules.moderation.service.CheatAttemptService(punishmentService, attemptTries,
+                        attemptSettings::current), staffService::isOwner));
         // A ban for a cheating rule: the record keeps it all, the anti-cheat starts counting afresh (as /ac reset).
         var freshStart = context.settings(FreshStartSettings.class, FreshStartSettings.DEFAULTS);
         services.ruleBreaches().freshStart(who -> Scheduling.global(context.plugin(), () -> {
