@@ -49,8 +49,9 @@ public final class AntiCheat {
      * Starts it inside the moderation module, on the module's own settings (their anti-cheat part). Everything it
      * starts is stopped through {@code context}.
      */
-    public static void start(ModuleContext context, SettingsStore<ModerationSettings> settings,
-                             ViolationService.MiningRecords mining) {
+    /** @return the anti-cheat's services, for what else in the module reaches into it (a cheating ban's fresh start) */
+    public static AntiCheatServices start(ModuleContext context, SettingsStore<ModerationSettings> settings,
+                                          ViolationService.MiningRecords mining) {
         Path folder = context.plugin().getDataFolder().toPath().getParent().resolve(FORMER_PLUGIN);
         LegacySettings.carryOver(context.core(), folder, settings, context.log());
         var messages = context.core().messages();
@@ -149,5 +150,6 @@ public final class AntiCheat {
         context.closeWith(AntiCheatCommands::stopped);
         context.log().info("Anti-cheat is up: {}, anti-ESP {}.", grim ? "Grim's flags are taken in" : "no Grim",
                 settings.current().antiCheat().antiEsp() ? "on" : "off");
+        return services;
     }
 }

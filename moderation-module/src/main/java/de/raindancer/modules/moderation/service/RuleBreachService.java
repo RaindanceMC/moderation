@@ -38,6 +38,19 @@ public final class RuleBreachService implements IModerationService {
     private final FineService fines;
     private final RuleBreachRule rule = new RuleBreachRule();
 
+    private volatile java.util.function.Consumer<UUID> freshStart = who -> { };
+    private volatile Supplier<java.util.List<String>> freshStartRules = java.util.List::of;
+
+    /**
+     * What a ban for a cheating rule does on top of the ban: wipe the anti-cheat's counts on them.
+     *
+     * @param rules the rule ids whose bans start afresh (the settings' list, read at each ban)
+     */
+    public void freshStart(java.util.function.Consumer<UUID> wipe, Supplier<java.util.List<String>> rules) {
+        this.freshStart = wipe == null ? who -> { } : wipe;
+        this.freshStartRules = rules == null ? java.util.List::of : rules;
+    }
+
     public RuleBreachService(PunishmentService punishments, RuleOffences offences, StaffRule staff,
                              Supplier<BanLimitRule> banLimit, Messages messages, FineService fines) {
         this.punishments = punishments;
@@ -121,6 +134,11 @@ public final class RuleBreachService implements IModerationService {
             return Optional.empty();
         }
         offences.add(subject, broken.id());
+        if (new de.raindancer.modules.moderation.rules.FreshStartRule().startsFresh(penalty.kind(), broken.id(),
+                broken.title(), freshStartRules.get())) {
+            // The record keeps every punishment; the anti-cheat counts afresh from here.
+            freshStart.accept(subject);
+        }
         messages.send(by, "moderation.rules.punished", "player", subjectName, "number", broken.number(),
                 "title", broken.title(), "penalty", breach.penalty().describe(),
                 "offence", RulePenalty.ordinal(breach.offence()));
