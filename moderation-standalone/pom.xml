@@ -174,7 +174,7 @@
         <!-- 3.3.2: a new mod group starts with vanilla /gamemode (survival, spectator; an admin creative too) — essentials.gamemode.* alone only narrowed a command nobody held. -->
         <!-- 3.8.0: screens for /screen — the staff online (never a vanished one) and everybody's own standing (RainsCore 2.10). -->
         <!-- 3.9.0: /ac reset wipes the x-ray mining ledger too; /ac fresh measures x-ray afresh, finds kept as history. -->
-        <plugin.version>3.9.0</plugin.version>
+        <plugin.version>3.10.0</plugin.version>
     </properties>
 
     <dependencies>

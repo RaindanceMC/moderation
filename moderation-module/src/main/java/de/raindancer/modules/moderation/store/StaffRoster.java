@@ -40,6 +40,22 @@ public final class StaffRoster {
         }
     }
 
+    /**
+     * Puts every rung's powers on duty in the permission groups — see {@link PermissionGroups#putOnDuty}; what a
+     * rung holds off duty too ({@link StaffRank#ALWAYS}) stays as it is.
+     *
+     * @return how many permissions moved
+     */
+    public int putOnDuty() {
+        int moved = 0;
+        for (StaffRank rank : StaffRank.ladder()) {
+            if (rank != StaffRank.OWNER) {
+                moved += groups.putOnDuty(rank.group(), StaffRank.ALWAYS);
+            }
+        }
+        return moved;
+    }
+
     public boolean editable() {
         return groups.editable();
     }

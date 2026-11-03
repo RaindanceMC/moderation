@@ -122,14 +122,18 @@ class NobodyIsOppedTest {
                 .doesNotContain("setOp(true)")
                 .contains("setOp(shouldBeOp)");
 
-        // Two: that decision is the setting AND the rank. Either alone is a bug — the setting alone
-        // would op every trial, and the rank alone would op admins on a server that never asked.
+        // Two: that decision is DutyOpRule's, fed the setting AND the ADMIN rank — either alone is a bug: the
+        // setting alone would op every trial, the rank alone would op admins on a server that never asked.
+        // DutyOpRuleTest.neverATrial pins that the rule ops nobody else but an operator the owner made by hand.
         int decision = service.indexOf("boolean shouldBeOp");
         assertThat(decision).as("the decision should be one named boolean").isNotNegative();
-        String howItIsDecided = service.substring(decision,
-                service.indexOf(';', decision));
-        assertThat(howItIsDecided)
-                .as("being opped has to require the setting *and* the ADMIN rank")
+        assertThat(service.substring(decision, service.indexOf(';', decision)))
+                .as("the decision is the rule's")
+                .contains("DutyOpRule.Decision.OP");
+        int fed = service.indexOf("new DutyOpRule.Situation(");
+        assertThat(fed).as("the rule is fed in StaffService").isNotNegative();
+        assertThat(service.substring(service.lastIndexOf("boolean adminRank", fed), service.indexOf(';', fed)))
+                .as("the rule is fed the setting *and* the ADMIN rank")
                 .contains("adminsAreOp")
                 .contains("ADMIN");
     }

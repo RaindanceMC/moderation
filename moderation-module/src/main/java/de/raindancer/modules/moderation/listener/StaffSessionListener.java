@@ -58,6 +58,9 @@ public final class StaffSessionListener implements IModerationListener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent event) {
         Player joining = event.getPlayer();
+        // An operator who comes back off duty is not op until they go into admin mode.
+        java.util.UUID id = joining.getUniqueId();
+        de.raindancer.core.platform.util.Scheduling.global(services.plugin(), () -> services.staff().applyOpPolicy(id));
 
         if (services.config().vanishOnJoinForStaff()
                 && joining.hasPermission(ModerationPermission.VANISH.node())) {

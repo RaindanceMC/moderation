@@ -71,7 +71,7 @@ import java.util.UUID;
  */
 public final class ModerationModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.9.0")
+    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.10.0")
             .describedAs("Bans, mutes, reports, staff notes and the screens for them — over "
                     + "RainsCore's punishments, which stay whether or not this is installed")
             .by("Raindancer118");
@@ -329,6 +329,25 @@ public final class ModerationModule implements FlexModule {
         staffService = new StaffService(context.plugin(), server, roster, context.core().grants(),
                 context.core().audit(), context.core().messages(), context.chat(),
                 context.core()::reapplyGrants, staffAlerts, settings.current());
+        // Op is a power too: with powers needing admin mode, operators are op only while in it.
+        var dutyOps = new de.raindancer.modules.moderation.store.DutyOpStore(context.dataFolder());
+        staffService.dutyOps(dutyOps);
+        StaffService onDuty = staffService;
+        Scheduling.async(context.plugin(), () -> {
+            if (!onDuty.loadDutyOps()) {
+                log.warn("The operators kept for duty could not be read now; they are read again on the next change.");
+            }
+            if (duty.current().powersNeedAdminMode()) {
+                onDuty.dutySwitched(true);
+            }
+        });
+        duty.onChange(now -> Scheduling.async(context.plugin(), () -> onDuty.dutySwitched(now.powersNeedAdminMode())));
+        var dutyWatch = de.raindancer.core.platform.permission.Duty.onChange(who -> {
+            if (who != null) {
+                Scheduling.global(context.plugin(), () -> onDuty.applyOpPolicy(who));
+            }
+        });
+        context.closeWith(dutyWatch::close);
 
         reportService.load();
         noteService.load();

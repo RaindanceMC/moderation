@@ -1,5 +1,8 @@
 package de.raindancer.modules.moderation.service;
 
+import java.util.Set;
+import de.raindancer.modules.moderation.store.DutyOpStore;
+import de.raindancer.modules.moderation.rules.DutyOpRule;
 import de.raindancer.core.moderation.audit.Audit;
 import de.raindancer.core.moderation.audit.AuditEntry;
 import de.raindancer.core.platform.permission.Grants;
@@ -64,6 +67,9 @@ public final class StaffService implements IModerationService {
      * installed for moderation is a support ticket nobody can diagnose.
      */
     private final java.util.Set<UUID> oppedByUs = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private volatile DutyOpStore dutyOps;
+    /** This server's operators kept for duty, as last read or written — never read from the database on a world thread. */
+    private final java.util.Set<UUID> keptForDuty = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     private final StaffAlerts alerts;
     private volatile ModerationSettings settings;
@@ -201,22 +207,48 @@ public final class StaffService implements IModerationService {
         Scheduling.global(plugin, () -> applyOpPolicy(who));
     }
 
-    public void applyOpPolicy(UUID who) {
-        if (!settings.adminsAreOp()) {
-            // With the setting off, this module has no opinion about op at all — it grants nodes and
-            // nothing else. Returning here rather than falling through to the check below is not a
-            // shortcut: the first live run warned about the owner still being op on *every* rank
-            // change, including promotions, which is a warning about something nobody asked for.
-            return;
-        }
-        boolean shouldBeOp = settings.adminsAreOp()
-                && roster.rankOf(who).filter(rank -> rank == StaffRank.ADMIN).isPresent();
+    /** Where the operators kept for duty are, once wired; null leaves op to the rank and the server. */
+    public void dutyOps(DutyOpStore store) {
+        this.dutyOps = store;
+    }
 
+    /** Reads this server's operators kept for duty; off the world's threads. */
+    public boolean loadDutyOps() {
+        DutyOpStore store = dutyOps;
+        if (store == null || !store.load()) {
+            return false;
+        }
+        keptForDuty.addAll(store.of(server()));
+        return true;
+    }
+
+    /** The key this server's operators are kept under; a server without a network id is "local". */
+    private static String server() {
+        String id = de.raindancer.core.platform.network.ThisServer.id();
+        return id == null || id.isBlank() ? "local" : id;
+    }
+
+    /**
+     * Op is a power too: with staff powers needing admin mode an operator is op only in admin mode, admins opped
+     * for their rank and operators opped by hand alike. Call on the global thread.
+     */
+    public void applyOpPolicy(UUID who) {
         org.bukkit.OfflinePlayer them = server.getOfflinePlayer(who);
-        if (them.isOp() == shouldBeOp) {
+        boolean needAdminMode = de.raindancer.core.platform.permission.Duty.powersNeedAdminMode();
+        boolean kept = dutyOps != null && keptForDuty.contains(who);
+        if (needAdminMode && them.isOp() && !kept && dutyOps != null) {
+            // Opped since the switch went on (a /op typed later): kept for duty like the rest, never lost.
+            adopt(List.of(who));
+            kept = true;
+        }
+        boolean adminRank = roster.rankOf(who).filter(rank -> rank == StaffRank.ADMIN).isPresent();
+        DutyOpRule.Decision decision = new DutyOpRule().decide(new DutyOpRule.Situation(adminRank,
+                settings.adminsAreOp(), kept, needAdminMode,
+                de.raindancer.core.moderation.players.AdminModes.isOn(who)));
+        if (decision == DutyOpRule.Decision.LEAVE) {
             return;
         }
-        if (!shouldBeOp && !oppedByUs.contains(who)) {
+        if (decision == DutyOpRule.Decision.DEOP_IF_OURS && them.isOp() && !oppedByUs.contains(who)) {
             // Somebody the server owner opped by hand, or in ops.json. Not ours to take away: an admin
             // demotion silently de-opping the owner's co-owner is a worse surprise than an op that
             // outlives a rank. Said in the console, because the alternative is a demotion that looks
@@ -224,6 +256,12 @@ public final class StaffService implements IModerationService {
             log.warn("{} is still a server operator, which this module did not grant and will not "
                     + "take away. Their rank no longer implies it — remove it with /deop if that was "
                     + "the intention.", them.getName() == null ? who.toString() : them.getName());
+            return;
+        }
+        // The one decision: DutyOpRule says OP only for an ADMIN with adminsAreOp, or for an operator the
+        // owner made by hand, kept for duty — and with powers needing admin mode, only while in it.
+        boolean shouldBeOp = decision == DutyOpRule.Decision.OP;
+        if (them.isOp() == shouldBeOp) {
             return;
         }
         them.setOp(shouldBeOp);
@@ -234,7 +272,57 @@ public final class StaffService implements IModerationService {
         }
     }
 
+    /**
+     * The server's switch moved. On: every rung's powers go on duty in the groups, today's operators are kept for
+     * duty (and may always switch admin mode on), and whoever is not in admin mode stops being op. Off: everybody
+     * kept for duty is op again, as before. Blocks on the groups and the database — never on the server thread.
+     */
+    public void dutySwitched(boolean on) {
+        DutyOpStore store = dutyOps;
+        String here = server();
+        if (on) {
+            int moved = roster.putOnDuty();
+            if (moved > 0) {
+                log.info("Staff powers need admin mode now: {} rank permission(s) moved under rains:powers=on.", moved);
+            }
+            List<UUID> operators = server.getOperators().stream().map(org.bukkit.OfflinePlayer::getUniqueId).toList();
+            adopt(operators);
+            Scheduling.global(plugin, () -> {
+                java.util.Set<UUID> everyone = new java.util.HashSet<>(keptForDuty);
+                everyone.addAll(operators);
+                everyone.forEach(this::applyOpPolicy);
+            });
+        } else if (store != null) {
+            Set<UUID> kept = Set.copyOf(keptForDuty);
+            if (kept.isEmpty()) {
+                return;
+            }
+            // Opped back through the one decision (kept for duty, switch off), then the list goes.
+            Scheduling.global(plugin, () -> {
+                kept.forEach(this::applyOpPolicy);
+                keptForDuty.removeAll(kept);
+                Scheduling.async(plugin, () -> store.clear(here));
+            });
+            log.info("Staff powers no longer need admin mode: {} operator(s) kept for duty are op again.",
+                    kept.size());
+        }
+    }
 
+    /** Keeps operators for duty, and lets them switch admin mode on even without a staff rank. */
+    private void adopt(List<UUID> operators) {
+        DutyOpStore store = dutyOps;
+        if (store == null || operators.isEmpty()) {
+            return;
+        }
+        keptForDuty.addAll(operators);
+        String here = server();
+        Scheduling.async(plugin, () -> {
+            if (!store.add(here, operators)) {
+                log.warn("The operators kept for duty could not be written; they stay op until it can be.");
+            }
+            operators.forEach(who -> grants.grant(who, StaffRank.ADMIN_MODE));
+        });
+    }
 
     /** Both files, off the server thread. Neither is large and both matter after a crash. */
     private void tellThem(UUID who, String key, Object... values) {

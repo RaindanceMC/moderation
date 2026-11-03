@@ -17,7 +17,9 @@ public record StaffDutySettings(
         @In("moderation/staff/duty") @Title("Staff powers only in admin mode")
         @Describe("On: support, mods and admins are ordinary players until they switch on /admin; their rank's "
                 + "permissions (those given in LuckPerms with context rains:powers=on) only work in admin mode. "
-                + "Staff chat and /admin itself always work. Needs LuckPerms.")
+                + "Op is a power too: operators — admins opped for their rank and anybody opped by hand — are op "
+                + "only while in admin mode, and opped again for good when this goes off. Staff chat and /admin "
+                + "itself always work; existing staff groups are moved onto duty when this goes on. Needs LuckPerms.")
         @Key("staff.powers-need-admin-mode")
         boolean powersNeedAdminMode) {
 
