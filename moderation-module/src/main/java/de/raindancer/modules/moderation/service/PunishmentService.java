@@ -20,6 +20,7 @@ import de.raindancer.modules.moderation.rules.AnnouncementRule;
 import de.raindancer.modules.moderation.rules.EscalationRule;
 import de.raindancer.modules.moderation.rules.StandingRule;
 import de.raindancer.modules.moderation.store.PendingNotices;
+import de.raindancer.core.ui.screen.LeaveScreen;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Server;
@@ -383,7 +384,13 @@ public final class PunishmentService implements IModerationService {
     }
 
     private static Component plain(String text) {
-        return MINI.deserialize("<red>" + (text == null ? "" : text));
+        return kickScreen(text);
+    }
+
+    /** A kick (or a ban without a screen of its own) as the player sees it: framed like every join/kick screen. */
+    static Component kickScreen(String reason) {
+        String why = reason == null || reason.isBlank() ? "" : "\n\n<gray>Reason: <white>" + reason.strip();
+        return LeaveScreen.framed(MINI.deserialize("<red><bold>You were kicked</bold></red>" + why));
     }
 
     @Override

@@ -27,7 +27,7 @@ moderation:
 # ─────────────────────────────────────────────────────────────────────────────
 anticheat:
   kicked: "<red><white><player></white> was kicked for <yellow><check></yellow> <gray>(level <level>)."
-  kick-screen: "<red>Kicked: unfair advantage (<check>).\n<gray>Contact the staff if you believe this is a mistake."
+  kick-screen: "<red><bold>You were kicked</bold></red>\n\n<gray>Unfair advantage: <white><check></white>\n<dark_gray>Contact the staff if you believe this is a mistake."
   client-refused: "<red><white><player></white> tried to join with <yellow><client></yellow> and was refused."
   alerts-on: "<green>Anti-cheat alerts are on."
   alerts-off: "<yellow>Anti-cheat alerts are off."

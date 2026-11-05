@@ -1,5 +1,6 @@
 package de.raindancer.modules.moderation.service;
 
+import de.raindancer.core.ui.screen.LeaveScreen;
 import de.raindancer.modules.moderation.ModerationSettings;
 import de.raindancer.core.RainsCore;
 import de.raindancer.core.moderation.punishment.Durations;
@@ -57,7 +58,7 @@ public final class PunishService implements IModerationService {
         track.kicking = true;
         Scheduling.entity(plugin, player, () -> {
             core.punishments().punish(player.getUniqueId(), PunishmentKind.KICK, null, reason(check), null);
-            player.kick(messages.get("anticheat.kick-screen", "check", check.title()));
+            player.kick(LeaveScreen.framed(messages.get("anticheat.kick-screen", "check", check.title())));
             alerts.staff("anticheat.kicked", "player", player.getName(), "check", check.title(),
                     "level", String.format(Locale.ROOT, "%.1f", level));
         });
@@ -120,7 +121,7 @@ public final class PunishService implements IModerationService {
             core.punishments().punish(player.getUniqueId(), PunishmentKind.BAN, null, reason(check), length);
             core.banBridge().mirrorBan(player.getUniqueId(), reason(check),
                     length == null ? null : Instant.now().plus(length));
-            player.kick(messages.get("anticheat.ban-screen", "check", check.title(), "length", shown));
+            player.kick(LeaveScreen.framed(messages.get("anticheat.ban-screen", "check", check.title(), "length", shown)));
             alerts.staff("anticheat.banned", "player", player.getName(), "check", check.title(),
                     "level", String.format(Locale.ROOT, "%.1f", level), "length", shown);
         });
@@ -128,7 +129,7 @@ public final class PunishService implements IModerationService {
 
     /** A client the server refuses, kicked without a record: it is a rule about software, not a sentence. */
     public void refuseClient(Player player, String what) {
-        Scheduling.entity(plugin, player, () -> player.kick(messages.get("anticheat.client-screen", "client", what)));
+        Scheduling.entity(plugin, player, () -> player.kick(LeaveScreen.framed(messages.get("anticheat.client-screen", "client", what))));
     }
 
     @Override
