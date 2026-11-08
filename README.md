@@ -20,3 +20,12 @@ Needs Java 25 and read access to `packages.tstieh.de` (server ids `packages-rele
 ## Versions
 
 A module's version is a property in this repository's root `pom.xml`, a plugin's is `plugin.version` in its own pom. CI publishes every version that is not in the registry yet on the next push to master.
+
+## Anti-cheat (3.16.0 / 3.17.0)
+
+Grim detects; this module keeps the network's account of it. What was added for this server:
+
+- **Excuses** (`rules/ExcuseRule`): a movement flag while riding one of Core's companions (or three seconds after), or with flight the server granted (a claim's perk, a game, `/fly`), is written down as excused and raises no level. A flag while the server lags (below `min-tps`) or the connection is slow (over 400 ms) counts half and never kicks or bans.
+- **Alts** (`rules/AltRule`, `store/KnownAddresses`, `service/AltWatch`): a join from an address a banned account used within a month, or one four or more accounts share, is a line to staff. Addresses are kept only as the network's keyed hash (`core.secrets()` "address-hash"), a month, in `ac_address`. Nobody is refused by it.
+- **X-ray suspicion to staff**: past 90 % the anti-cheat alert channel says so (`anticheat.xray-suspect`), at most every ten minutes, before the report at `xray.report-score` fires.
+- **X-ray ledgers follow the player** (`ac_xray`): written with every flush, read on arrival when the network's copy is newer.
