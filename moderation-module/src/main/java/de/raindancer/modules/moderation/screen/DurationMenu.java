@@ -120,11 +120,9 @@ public final class DurationMenu extends ModerationScreen {
                 .orElse("Not allowed");
     }
 
-    /** The chat prompt, which is Core's — one question, one answer, and a timeout. */
+    /** The game's dialog, through Core — one question, one answer; the page comes back on a cancel. */
     private void askForOne() {
-        viewer.closeInventory();
-        tell("moderation.type-a-length");
-        services().prompts().ask(viewer.getUniqueId(), "moderation", Duration.ofSeconds(60),
+        de.raindancer.core.ui.prompt.AnvilInput.open(viewer, "How long? e.g. 3d, 12h, 30m", "", de.raindancer.core.ui.prompt.Parsers.text(24),
                 typed -> Sentence.parse(typed).ifPresentOrElse(
                         // Checked again, because a typed length bypasses every greyed button above.
                         wanted -> {

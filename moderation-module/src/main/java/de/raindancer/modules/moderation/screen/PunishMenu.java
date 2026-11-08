@@ -152,10 +152,8 @@ public final class PunishMenu extends ModerationList<Reason> {
             return;
         }
         viewer.closeInventory();
-        tell("moderation.type-a-reason", "player", subjectName,
-                "what", kind.name().toLowerCase(Locale.ROOT));
-
-        services().prompts().ask(viewer.getUniqueId(), "moderation", Duration.ofSeconds(120),
+        de.raindancer.core.ui.prompt.AnvilInput.open(viewer, "Why is " + subjectName + " being " + kind.name().toLowerCase(Locale.ROOT) + "ned?", "",
+                de.raindancer.core.ui.prompt.Parsers.text(200),
                 typed -> {
                     Reason theirs;
                     try {
@@ -182,7 +180,7 @@ public final class PunishMenu extends ModerationList<Reason> {
                     }
                     handOut(theirs);
                 },
-                () -> tell("moderation.nothing-typed"));
+                this::open);
     }
 
     private String kindDescription() {

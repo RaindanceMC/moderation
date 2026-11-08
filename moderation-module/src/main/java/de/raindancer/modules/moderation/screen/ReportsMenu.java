@@ -132,9 +132,7 @@ public final class ReportsMenu extends ModerationScreen {
 
     /** Asks for a name, then lists every report about them or by them. */
     private void search() {
-        viewer.closeInventory();
-        tell("moderation.report.type-name");
-        services().prompts().ask(viewer.getUniqueId(), "moderation", Duration.ofSeconds(60),
+        de.raindancer.core.ui.prompt.AnvilInput.open(viewer, "Whose report? Type a name", "", de.raindancer.core.ui.prompt.Parsers.text(32),
                 typed -> {
                     String wanted = typed == null ? "" : typed.strip().toLowerCase(Locale.ROOT);
                     Optional<Report> match = services().reports().all().stream()
@@ -154,7 +152,7 @@ public final class ReportsMenu extends ModerationScreen {
                     String name = subject ? found.subjectName() : found.reporterName();
                     new ReportListMenu(services(), viewer, this, ReportListMenu.Filter.INVOLVING, who, name).open();
                 },
-                () -> tell("moderation.nothing-typed"));
+                this::open);
     }
 
     @Override

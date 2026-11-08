@@ -120,14 +120,12 @@ public final class PlayerPickerMenu extends ModerationList<PlayerEntry> {
     }
 
     private void askWhatFor() {
-        viewer.closeInventory();
-        tell("moderation.type-a-name");
-        services().prompts().ask(viewer.getUniqueId(), "moderation", Duration.ofSeconds(60),
+        de.raindancer.core.ui.prompt.AnvilInput.open(viewer, "Who are you looking for?", searching == null ? "" : searching, de.raindancer.core.ui.prompt.Parsers.text(32),
                 typed -> {
                     searching = typed == null ? "" : typed.trim();
                     open();
                 },
-                () -> tell("moderation.nothing-typed"));
+                this::open);
     }
 
     @Override

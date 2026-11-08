@@ -68,9 +68,7 @@ public final class ReportPresetMenu extends ModerationList<ReportPreset> {
         // Where both stand is read now, on the reporter's own thread — the typed answer may arrive anywhere.
         ReportPlace reporterAt = ReportService.placeOf(viewer);
         ReportPlace subjectAt = ReportService.placeOf(services().server().getPlayer(subject));
-        viewer.closeInventory();
-        tell("moderation.report.type-what-happened", "category", preset.title(), "player", subjectName);
-        services().prompts().ask(viewer.getUniqueId(), "moderation", Duration.ofSeconds(120),
+        de.raindancer.core.ui.prompt.AnvilInput.open(viewer, preset.title() + ": what happened?", "", de.raindancer.core.ui.prompt.Parsers.text(200),
                 typed -> {
                     // The reason in front of what they typed, so the queue reads as a reason and the detail survives.
                     String text = preset.title() + " — " + (typed == null ? "" : typed.trim());
@@ -81,7 +79,7 @@ public final class ReportPresetMenu extends ModerationList<ReportPreset> {
                                     filed -> tell("moderation.report.filed", "id", filed.id(), "player", subjectName),
                                     () -> tellWhyNot(text));
                 },
-                () -> tell("moderation.nothing-typed"));
+                this::open);
     }
 
     /** Says which rule refused it, rather than leaving a player with a menu that did nothing. */

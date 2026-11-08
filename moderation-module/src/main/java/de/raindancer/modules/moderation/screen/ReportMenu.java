@@ -286,16 +286,15 @@ public final class ReportMenu extends ModerationScreen {
             tell("moderation.no-permission");
             return;
         }
-        viewer.closeInventory();
-        tell(dealtWith ? "moderation.report.type-what-you-did" : "moderation.report.type-why-not", "id", report.id());
-        services().prompts().ask(viewer.getUniqueId(), "moderation", Duration.ofSeconds(120),
+        de.raindancer.core.ui.prompt.AnvilInput.open(viewer, dealtWith ? "What did you do about it?" : "Why is it not dealt with?", "",
+                de.raindancer.core.ui.prompt.Parsers.text(200),
                 typed -> {
                     boolean closed = dealtWith
                             ? services().reportService().resolve(reportId, viewer.getUniqueId(), viewer.getName(), typed)
                             : services().reportService().reject(reportId, viewer.getUniqueId(), viewer.getName(), typed);
                     tell(closed ? "moderation.report.closed" : "moderation.report.already-closed", "id", reportId);
                 },
-                () -> tell("moderation.nothing-typed"));
+                this::open);
     }
 
     @Override

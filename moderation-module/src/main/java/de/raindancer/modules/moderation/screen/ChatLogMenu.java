@@ -122,9 +122,7 @@ public final class ChatLogMenu extends ModerationList<ChatLog.Line> {
                         new ChatLogMenu(services(), viewer, parent(), subject, subjectName, "").open();
                         return;
                     }
-                    viewer.closeInventory();
-                    tell("moderation.chatlog.type-search");
-                    services().prompts().ask(viewer.getUniqueId(), "Moderation", Duration.ofMinutes(1),
+                    de.raindancer.core.ui.prompt.AnvilInput.open(viewer, "Search " + subjectName + "'s chat for…", search == null ? "" : search, de.raindancer.core.ui.prompt.Parsers.text(64),
                             typed -> new ChatLogMenu(services(), viewer, parent(), subject, subjectName, typed).open(),
                             () -> new ChatLogMenu(services(), viewer, parent(), subject, subjectName, search).open());
                 });

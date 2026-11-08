@@ -169,9 +169,7 @@ public final class FinesMenu extends ModerationList<FineRecord> {
             services.messages().send(viewer, "moderation.fine.no-economy");
             return;
         }
-        viewer.closeInventory();
-        services.messages().send(viewer, "moderation.fine.type-an-amount", "player", subjectName);
-        services.prompts().ask(viewer.getUniqueId(), "moderation", Duration.ofSeconds(60),
+        de.raindancer.core.ui.prompt.AnvilInput.open(viewer, "Fine " + subjectName + " how much? e.g. 250", "", de.raindancer.core.ui.prompt.Parsers.text(16),
                 typedAmount -> {
                     Money amount = Fees.amount(typedAmount);
                     if (!amount.isPositive()) {
@@ -184,8 +182,7 @@ public final class FinesMenu extends ModerationList<FineRecord> {
                                 Fees.format(limit.get()));
                         return;
                     }
-                    services.messages().send(viewer, "moderation.fine.type-a-reason", "player", subjectName);
-                    services.prompts().ask(viewer.getUniqueId(), "moderation", Duration.ofSeconds(120),
+                    de.raindancer.core.ui.prompt.AnvilInput.open(viewer, "For what?", "", de.raindancer.core.ui.prompt.Parsers.text(200),
                             reason -> new ConfirmScreen(services, viewer, back,
                                     "<yellow>Fine " + subjectName + " " + Fees.format(amount) + "?",
                                     List.of("<gray>For: <white>" + MINI.escapeTags(reason),
@@ -204,9 +201,9 @@ public final class FinesMenu extends ModerationList<FineRecord> {
                                         FineTalk.tell(services.messages(), viewer, subjectName, result);
                                         viewer.closeInventory();
                                     }).open(),
-                            () -> services.messages().send(viewer, "moderation.nothing-typed"));
+                            back::open);
                 },
-                () -> services.messages().send(viewer, "moderation.nothing-typed"));
+                back::open);
     }
 
     @Override

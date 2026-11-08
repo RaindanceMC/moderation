@@ -115,15 +115,13 @@ public final class NotesMenu extends ModerationList<StaffNote> {
             tell("moderation.no-permission");
             return;
         }
-        viewer.closeInventory();
-        tell("moderation.type-a-note", "player", subjectName);
-        services().prompts().ask(viewer.getUniqueId(), "moderation", Duration.ofSeconds(120),
+        de.raindancer.core.ui.prompt.AnvilInput.open(viewer, "A note about " + subjectName, "", de.raindancer.core.ui.prompt.Parsers.text(200),
                 typed -> {
                     services().noteService().add(subject, subjectName, viewer.getUniqueId(),
                             viewer.getName(), typed);
                     tell("moderation.note-written", "player", subjectName);
                 },
-                () -> tell("moderation.nothing-typed"));
+                this::open);
     }
 
     @Override
