@@ -84,7 +84,7 @@ public final class WhoToReportMenu extends ModerationList<Player> {
     protected void onClick(Player who, InventoryClickEvent event) {
         // Directly, handing this page over as the parent — so Back returns to the list rather than
         // closing the inventory and leaving a player who picked the wrong name with nothing.
-        new ReportCategoryMenu(services(), viewer, this, who.getUniqueId(), who.getName()).open();
+        new ReportCategoryDialog(services(), viewer, this::open, who.getUniqueId(), who.getName()).open();
     }
 
     @Override

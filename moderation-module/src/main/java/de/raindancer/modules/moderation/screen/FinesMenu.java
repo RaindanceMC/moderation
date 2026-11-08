@@ -123,7 +123,7 @@ public final class FinesMenu extends ModerationList<FineRecord> {
         toolbar(2, Icons.of(Material.GOLD_INGOT, "<yellow>Fine them",
                         "<gray>You type the amount, then why.",
                         "<dark_gray>Charged from their balance; the rest becomes debt."),
-                click -> askForAFine(viewer, this, services(), subject, subjectName));
+                click -> new FineDialog(services(), viewer, this::open, subject, subjectName).open());
         toolbar(4, Icons.of(Material.SPONGE, "<green>Forgive their debt",
                         "<gray>Owes <white>" + Fees.format(owing) + "</white>.",
                         "<dark_gray>Writes it off. Asks first."),
@@ -152,58 +152,6 @@ public final class FinesMenu extends ModerationList<FineRecord> {
         tell(wiped.isPositive() ? "moderation.fine.forgiven" : "moderation.fine.nothing-to-forgive",
                 "player", subjectName, "amount", Fees.format(wiped));
         open();
-    }
-
-    /**
-     * The chat prompts for a fine — the amount, then why — and a confirmation. Shared with the player's page, which
-     * has the same button.
-     */
-    public static void askForAFine(Player viewer, Menu back, ModerationServices services, UUID subject, String subjectName) {
-        var verdict = services.staffRule().canAct(viewer.getUniqueId(), subject, ModerationPermission.FINE);
-        if (verdict.isRefused()) {
-            verdict.refusal().ifPresent(reason -> services.messages().send(viewer, reason, "detail",
-                    verdict.detail() == null ? "" : verdict.detail()));
-            return;
-        }
-        if (!services.fines().hasEconomy()) {
-            services.messages().send(viewer, "moderation.fine.no-economy");
-            return;
-        }
-        de.raindancer.core.ui.prompt.AnvilInput.open(viewer, "Fine " + subjectName + " how much? e.g. 250", "", de.raindancer.core.ui.prompt.Parsers.text(16),
-                typedAmount -> {
-                    Money amount = Fees.amount(typedAmount);
-                    if (!amount.isPositive()) {
-                        services.messages().send(viewer, "moderation.fine.bad-amount", "text", typedAmount);
-                        return;
-                    }
-                    var limit = services.fines().limitFor(viewer.getUniqueId());
-                    if (limit.isPresent() && amount.isMoreThan(limit.get())) {
-                        services.messages().send(viewer, "moderation.fine.too-much-for-you", "detail",
-                                Fees.format(limit.get()));
-                        return;
-                    }
-                    de.raindancer.core.ui.prompt.AnvilInput.open(viewer, "For what?", "", de.raindancer.core.ui.prompt.Parsers.text(200),
-                            reason -> new ConfirmScreen(services, viewer, back,
-                                    "<yellow>Fine " + subjectName + " " + Fees.format(amount) + "?",
-                                    List.of("<gray>For: <white>" + MINI.escapeTags(reason),
-                                            "<gray>Charged from their balance, offline or not."),
-                                    () -> {
-                                        var again = services.staffRule().canAct(viewer.getUniqueId(), subject,
-                                                ModerationPermission.FINE);
-                                        if (again.isRefused()) {
-                                            again.refusal().ifPresent(key -> services.messages().send(viewer, key,
-                                                    "detail", again.detail() == null ? "" : again.detail()));
-                                            return;
-                                        }
-                                        FineService.Result result = services.fines().fine(viewer.getUniqueId(),
-                                                viewer.getName(), subject, subjectName, amount, reason.strip(), null,
-                                                FineService.Kind.FINE);
-                                        FineTalk.tell(services.messages(), viewer, subjectName, result);
-                                        viewer.closeInventory();
-                                    }).open(),
-                            back::open);
-                },
-                back::open);
     }
 
     @Override

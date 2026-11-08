@@ -3,7 +3,7 @@ package de.raindancer.modules.moderation.command;
 import de.raindancer.core.moderation.rules.ServerRule;
 import de.raindancer.modules.moderation.ModerationServices;
 import de.raindancer.modules.moderation.model.ModerationPermission;
-import de.raindancer.modules.moderation.screen.RuleBreachMenu;
+import de.raindancer.modules.moderation.screen.RuleBreachDialog;
 import de.raindancer.modules.moderation.util.Players;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.OfflinePlayer;
@@ -46,7 +46,7 @@ public final class BrokeCommand extends StaffCommand {
         String name = Players.nameOf(them);
         if (args.length == 1) {
             if (sender instanceof Player staff) {
-                new RuleBreachMenu(moderation, staff, null, them.getUniqueId(), name).open();
+                new RuleBreachDialog(moderation, staff, null, them.getUniqueId(), name).open();
             } else {
                 moderation.messages().send(sender, "moderation.usage", "usage", "/broke <player> <rule number> [what happened]");
             }

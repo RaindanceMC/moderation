@@ -172,7 +172,7 @@ public final class ReportListMenu extends ModerationList<Report> {
             refresh();
             return;
         }
-        new ReportMenu(services(), viewer, this, report.id()).open();
+        new ReportDialog(services(), viewer, this::open, report.id()).open();
     }
 
     @Override

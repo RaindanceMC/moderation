@@ -144,12 +144,12 @@ public final class XrayReviewMenu extends ModerationList<XrayEvidenceService.Fin
         toolbar(5, ledger != null, Icons.of(Material.ENDER_EYE, "<yellow>Show me their tunnels",
                         "<gray>Draws their recent digging around you for 30 seconds,",
                         "<gray>only you can see it: <white>grey</white> rock, <aqua>aqua</aqua> ore veins,",
-                        "<red>red</red> bait ores only an x-ray shows.", viewer.hasPermission(PlayerScreen.TELEPORT)
+                        "<red>red</red> bait ores only an x-ray shows.", viewer.hasPermission(PlayerRoomDialog.TELEPORT)
                                 ? "<dark_gray>Takes you there if you are far away." : "<dark_gray>Stand near it to see it."),
                 "Nothing of theirs is recorded yet", click -> {
                     viewer.closeInventory();
                     de.raindancer.modules.moderation.visual.XrayReplay.goAndShow(services().plugin(), viewer, ledger,
-                            viewer.hasPermission(PlayerScreen.TELEPORT), drawn -> tell(drawn > 0 ? "moderation.xray.replay-shown" : "moderation.xray.replay-empty",
+                            viewer.hasPermission(PlayerRoomDialog.TELEPORT), drawn -> tell(drawn > 0 ? "moderation.xray.replay-shown" : "moderation.xray.replay-empty",
                                     "player", subjectName, "count", drawn));
                 });
     }

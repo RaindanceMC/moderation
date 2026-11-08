@@ -78,7 +78,7 @@ public final class KickCommand extends StaffCommand {
             // the usage line, having no screen to open.
             if (sender instanceof org.bukkit.entity.Player staff) {
                 new de.raindancer.modules.moderation.screen.PlayerPickerMenu(moderation, staff, null,
-                        (who, name) -> new de.raindancer.modules.moderation.screen.PunishMenu(moderation, staff, null, who, name,
+                        (who, name) -> new de.raindancer.modules.moderation.screen.ReasonDialog(moderation, staff, null, who, name,
                                 de.raindancer.core.moderation.punishment.PunishmentKind.KICK)
                                 .open()).open();
                 return;

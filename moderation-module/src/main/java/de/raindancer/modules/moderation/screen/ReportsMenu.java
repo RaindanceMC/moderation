@@ -98,7 +98,7 @@ public final class ReportsMenu extends ModerationScreen {
                 click -> search());
         // Who Grim keeps flagging, beside who players reported: the two ways somebody needs looking at.
         var antiCheat = de.raindancer.modules.moderation.AntiCheatCommands.running();
-        boolean mayCheck = antiCheat.isPresent() && viewer.hasPermission(PlayerLookIntoMenu.ANTICHEAT);
+        boolean mayCheck = antiCheat.isPresent() && viewer.hasPermission(PlayerLookIntoDialog.ANTICHEAT);
         band(MenuLayout.LAND, 6, mayCheck, Icons.of(Material.COMMAND_BLOCK, "<yellow>Anti-cheat suspects",
                         "<gray>Who Grim keeps flagging right now,", "<gray>highest level first."),
                 antiCheat.isEmpty() ? "The anti-cheat is not running" : "For whoever may use the anti-cheat",

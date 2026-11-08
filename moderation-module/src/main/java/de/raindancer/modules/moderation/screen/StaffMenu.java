@@ -96,7 +96,7 @@ public final class StaffMenu extends ModerationList<StaffMenu.OnShift> {
 
     @Override
     protected void onClick(OnShift who, InventoryClickEvent event) {
-        new PlayerMenu(services(), viewer, this, who.id(), who.name()).open();
+        new PlayerDialog(services(), viewer, this::open, who.id(), who.name()).open();
     }
 
     @Override

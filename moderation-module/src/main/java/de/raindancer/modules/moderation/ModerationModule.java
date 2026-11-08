@@ -71,7 +71,7 @@ import java.util.UUID;
  */
 public final class ModerationModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.18.0")
+    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.19.0")
             .describedAs("Bans, mutes, reports, staff notes and the screens for them — over "
                     + "RainsCore's punishments, which stay whether or not this is installed")
             .by("Raindancer118");
@@ -659,7 +659,7 @@ public final class ModerationModule implements FlexModule {
 
         @Override
         public void player(Player viewer, UUID subject, String subjectName) {
-            new de.raindancer.modules.moderation.screen.PlayerMenu(services, viewer, null, subject,
+            new de.raindancer.modules.moderation.screen.PlayerDialog(services, viewer, null, subject,
                     subjectName).open();
         }
 
@@ -676,7 +676,7 @@ public final class ModerationModule implements FlexModule {
 
         @Override
         public void notes(Player viewer, UUID subject, String subjectName) {
-            new de.raindancer.modules.moderation.screen.NotesMenu(services, viewer, null, subject,
+            new de.raindancer.modules.moderation.screen.NotesDialog(services, viewer, null, subject,
                     subjectName).open();
         }
 
@@ -687,7 +687,7 @@ public final class ModerationModule implements FlexModule {
 
         @Override
         public void reportCategories(Player viewer, UUID subject, String subjectName) {
-            new de.raindancer.modules.moderation.screen.ReportCategoryMenu(services, viewer, null,
+            new de.raindancer.modules.moderation.screen.ReportCategoryDialog(services, viewer, null,
                     subject, subjectName).open();
         }
 

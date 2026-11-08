@@ -145,8 +145,8 @@ public final class ModerationCommand extends StaffCommand {
             moderation.messages().send(viewer, "moderation.report.no-such-report", "id", args[1]);
             return;
         }
-        new de.raindancer.modules.moderation.screen.ReportMenu(moderation, viewer,
-                new de.raindancer.modules.moderation.screen.ReportsMenu(moderation, viewer, null), args[1]).open();
+        new de.raindancer.modules.moderation.screen.ReportDialog(moderation, viewer,
+                () -> new de.raindancer.modules.moderation.screen.ReportsMenu(moderation, viewer, null).open(), args[1]).open();
     }
 
     private void tellStanding(CommandSender sender, String[] args) {

@@ -98,7 +98,7 @@ public final class PlayerPickerMenu extends ModerationList<PlayerEntry> {
             chosen.accept(who.id(), who.name());
             return;
         }
-        new PlayerMenu(services(), viewer, this, who.id(), who.name()).open();
+        new PlayerDialog(services(), viewer, this::open, who.id(), who.name()).open();
     }
 
     @Override

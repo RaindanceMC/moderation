@@ -29,7 +29,7 @@ class ScreenGrammarTest {
 
     /** The interface and the abstract screens: extended rather than opened, so nothing constructs them. */
     private static final List<String> BASE_CLASSES =
-            List.of("IModerationScreen", "ModerationScreen", "ModerationList", "PlayerScreen");
+            List.of("IModerationScreen", "ModerationScreen", "ModerationList", "ModerationDialog", "PlayerRoomDialog");
 
     private record Screen(String name, String body) {
     }
@@ -51,7 +51,7 @@ class ScreenGrammarTest {
     @DisplayName("the scan found the screens, so a rename cannot quietly empty it")
     void theScanIsNotVacuous() {
         assertThat(screens()).extracting(Screen::name)
-                .contains("PlayerMenu", "PunishMenu", "HistoryMenu", "ReportsMenu", "ConfirmScreen");
+                .contains("PlayerDialog", "ReasonDialog", "HistoryMenu", "ReportsMenu", "ConfirmScreen");
         assertThat(screens()).hasSizeGreaterThanOrEqualTo(10);
     }
 
@@ -151,8 +151,8 @@ class ScreenGrammarTest {
         // render happened at least one click ago and a permission can be taken away in between.
         List<String> trusting = new ArrayList<>();
         for (Screen screen : screens()) {
-            if (BASE_CLASSES.contains(screen.name()) || drawsBands(screen)) {
-                continue;
+            if (BASE_CLASSES.contains(screen.name()) || drawsBands(screen) || isDialog(screen)) {
+                continue;   // a dialog greys its buttons instead; see the dialog test below
             }
             if (!screen.body().contains("may(")) {
                 continue;   // nothing about this list depends on a permission at all
@@ -169,6 +169,63 @@ class ScreenGrammarTest {
                 .as("these act on a click without re-asking and saying so — the greyed state of a "
                         + "page rendered five minutes ago is not a permission check")
                 .isEmpty();
+    }
+
+    @Test
+    @DisplayName("a dialog that asks about a permission greys the button with the reason rather than hiding it")
+    void dialogsGreyRatherThanHide() {
+        // A dialog cannot disable a button, so Core's DialogPage draws a refused one greyed, with the reason on
+        // hover, and brings the window back with the reason when it is pressed — the overload
+        //     button(allowed, label, tooltip, reason, handler)
+        // An `if (may(…))` around a three-argument button would be the hidden button again.
+        List<String> hiding = new ArrayList<>();
+        for (Screen screen : screens()) {
+            if (BASE_CLASSES.contains(screen.name()) || !isDialog(screen)) {
+                continue;
+            }
+            if (screen.body().contains("may(") && !hasGuardedButton(screen)) {
+                hiding.add(screen.name());
+            }
+        }
+        assertThat(hiding).as("these decide from a permission without ever greying a button").isEmpty();
+        assertThat(screens().stream().filter(ScreenGrammarTest::isDialog).count())
+                .as("the scan found the dialogs").isGreaterThanOrEqualTo(10);
+    }
+
+    @Test
+    @DisplayName("a dialog never punishes on the press itself: it asks first")
+    void dialogsConfirmPunishments() {
+        // The chest pages had the danger slot; a dialog has ConfirmScreen. Every dialog that hands out or lifts a
+        // punishment, or fines, goes through it.
+        List<String> unguarded = new ArrayList<>();
+        for (Screen screen : screens()) {
+            if (!isDialog(screen)) {
+                continue;
+            }
+            boolean acts = screen.body().contains("punishmentService().punish(")
+                    || screen.body().contains("punishmentService().lift(")
+                    || screen.body().contains("fines().fine(")
+                    || screen.body().contains("ruleBreaches().breakRule(");
+            if (acts && !screen.body().contains("new ConfirmScreen(")) {
+                unguarded.add(screen.name());
+            }
+        }
+        assertThat(unguarded).isEmpty();
+    }
+
+    private static boolean isDialog(Screen screen) {
+        return screen.body().contains("extends ModerationDialog") || screen.body().contains("extends PlayerRoomDialog");
+    }
+
+    /** Whether any {@code button(...)} call here takes five arguments — the greying overload. */
+    private static boolean hasGuardedButton(Screen screen) {
+        String body = screen.body();
+        for (int at = body.indexOf(".button("); at >= 0; at = body.indexOf(".button(", at + 1)) {
+            if (argumentsOf(body, at + ".button(".length()) == 5) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Whether this screen lays buttons out in bands at all, as opposed to being a paged list. */
@@ -225,6 +282,7 @@ class ScreenGrammarTest {
             boolean speaks = screen.body().contains("tell(")
                     || screen.body().contains("messages().send(")
                     || screen.body().contains("Icons.locked(")
+                    || hasGuardedButton(screen)
                     // Core's band(band, column, allowed, item, reason, handler) greys the button with the reason.
                     || java.util.regex.Pattern.compile("band\\([^;]*may\\(", java.util.regex.Pattern.DOTALL)
                     .matcher(screen.body()).find();
@@ -255,7 +313,7 @@ class ScreenGrammarTest {
                  at = screen.body().indexOf("new ", at + 1)) {
                 String call = screen.body().substring(at,
                         Math.min(screen.body().length(), at + 200));
-                if (!call.matches("(?s)new [A-Za-z]*(Menu|Screen)\\(.*")) {
+                if (!call.matches("(?s)new [A-Za-z]*(Menu|Screen|Dialog)\\(.*")) {
                     continue;
                 }
                 // The parent is the third argument of every screen in this package.
