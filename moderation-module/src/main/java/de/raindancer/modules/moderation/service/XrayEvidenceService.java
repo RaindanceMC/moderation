@@ -233,6 +233,17 @@ public final class XrayEvidenceService implements IModerationService, ViolationS
         reports.file(null, null, player.getUniqueId(), player.getName(), why.toString());
     }
 
+    /** How many players' last verdict is at least this sure — from what was last judged, nothing recomputed. */
+    public int suspectsNow(int percent) {
+        int count = 0;
+        for (XrayVerdictRule.Verdict verdict : latest.values()) {
+            if (verdict.percent() >= percent) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     /** The current verdict for anybody with a ledger, worked out afresh. */
     public XrayVerdictRule.Verdict verdictFor(UUID player) {
         MiningLedger ledger = ledgers.find(player);

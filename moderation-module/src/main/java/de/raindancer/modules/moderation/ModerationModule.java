@@ -71,7 +71,7 @@ import java.util.UUID;
  */
 public final class ModerationModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.17.0")
+    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.18.0")
             .describedAs("Bans, mutes, reports, staff notes and the screens for them — over "
                     + "RainsCore's punishments, which stay whether or not this is installed")
             .by("Raindancer118");
@@ -504,6 +504,30 @@ public final class ModerationModule implements FlexModule {
 
         // Grim's flags, the network's record of them, anti-ESP and the client policy: one module with moderation.
         AntiCheatServices antiCheat = AntiCheat.start(context, settings, xrayEvidence);
+        // Staff see their queue on the sidebar (Core 2.58.0): reports waiting, x-ray suspects — only for those who may
+        // read the queue, and only while there is something; hidden or moved on their sidebar page like any section.
+        de.raindancer.core.ui.scoreboard.SidebarSections.register("moderation", "Staff", 20, id -> {
+            org.bukkit.entity.Player online = server.getPlayer(id);
+            if (online == null || !online.hasPermission(de.raindancer.modules.moderation.model.ModerationPermission.REPORTS.node())) {
+                return java.util.List.of();
+            }
+            int waiting = reportService.waitingCount();
+            int suspects = xrayEvidence.suspectsNow(50);
+            if (waiting == 0 && suspects == 0) {
+                return java.util.List.of();
+            }
+            var mini = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage();
+            java.util.List<net.kyori.adventure.text.Component> lines = new java.util.ArrayList<>();
+            lines.add(mini.deserialize("<dark_gray>▪ <gray>Staff"));
+            if (waiting > 0) {
+                lines.add(mini.deserialize("   <yellow>" + waiting + " report" + (waiting == 1 ? "" : "s") + " waiting"));
+            }
+            if (suspects > 0) {
+                lines.add(mini.deserialize("   <gold>" + suspects + " x-ray suspect" + (suspects == 1 ? "" : "s")));
+            }
+            return lines;
+        });
+        context.closeWith(() -> de.raindancer.core.ui.scoreboard.SidebarSections.unregister("moderation"));
         // X-ray suspicion reaches staff the way a Grim flag does — on every server, with the player's name a click
         // away — before it is sure enough for a report.
         xrayEvidence.suspectsTo((player, verdict) -> {
