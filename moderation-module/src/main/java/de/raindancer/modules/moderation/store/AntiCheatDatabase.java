@@ -36,6 +36,15 @@ public final class AntiCheatDatabase {
                 level      REAL    NOT NULL,
                 updated_at INTEGER NOT NULL,
                 PRIMARY KEY (player, check_key)
+            )""",
+            // 3.16.0: which accounts came from which address (a keyed hash), for a word to staff about alts.
+            """
+            CREATE TABLE ac_address (
+                player    TEXT    NOT NULL,
+                name      TEXT    NOT NULL,
+                address   TEXT    NOT NULL,
+                last_seen INTEGER NOT NULL,
+                PRIMARY KEY (player, address)
             )""");
 
     private AntiCheatDatabase() {

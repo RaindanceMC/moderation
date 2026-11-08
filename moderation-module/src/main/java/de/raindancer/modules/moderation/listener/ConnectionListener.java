@@ -22,10 +22,17 @@ public final class ConnectionListener implements IModerationListener {
 
     private final AntiCheatServices services;
     private final List<IModerationListener> everyone;
+    private final de.raindancer.modules.moderation.service.AltWatch alts;
 
     public ConnectionListener(AntiCheatServices services, List<IModerationListener> everyone) {
+        this(services, everyone, null);
+    }
+
+    public ConnectionListener(AntiCheatServices services, List<IModerationListener> everyone,
+                              de.raindancer.modules.moderation.service.AltWatch alts) {
         this.services = services;
         this.everyone = everyone;
+        this.alts = alts;
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -37,6 +44,11 @@ public final class ConnectionListener implements IModerationListener {
         services.tap().inject(player);
         // Levels earned on another server of the network come along.
         Scheduling.async(services.plugin(), () -> services.violations().arrived(track));
+        if (alts != null) {
+            String address = player.getAddress() == null || player.getAddress().getAddress() == null ? null
+                    : player.getAddress().getAddress().getHostAddress();
+            Scheduling.async(services.plugin(), () -> alts.joined(player.getUniqueId(), player.getName(), address));
+        }
         // The brand arrives during configuration, but some proxies forward it late.
         Scheduling.entityLater(services.plugin(), player, 40, () -> checkBrand(player, track));
     }

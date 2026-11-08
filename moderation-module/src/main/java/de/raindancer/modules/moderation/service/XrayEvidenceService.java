@@ -59,6 +59,16 @@ public final class XrayEvidenceService implements IModerationService, ViolationS
     private final Map<UUID, DigPath> paths = new ConcurrentHashMap<>();
     private final Map<UUID, XrayVerdictRule.Verdict> latest = new ConcurrentHashMap<>();
     private final Cooldowns<UUID> between = new Cooldowns<>();
+    /** A heads-up to staff, apart from the report: suspicion past {@link #SUSPECT_PERCENT}, at most every ten minutes. */
+    private final Cooldowns<UUID> warned = new Cooldowns<>();
+    private volatile java.util.function.BiConsumer<Player, XrayVerdictRule.Verdict> suspects = (player, verdict) -> { };
+    public static final int SUSPECT_PERCENT = 90;
+
+    /** Who hears that a player's mining looks like x-ray before the report fires — the anti-cheat's staff alerts. */
+    public void suspectsTo(java.util.function.BiConsumer<Player, XrayVerdictRule.Verdict> listener) {
+        this.suspects = listener == null ? (player, verdict) -> { } : listener;
+        warned.every(java.time.Duration.ofMinutes(10));
+    }
     private volatile ModerationSettings settings;
     private volatile Set<OreKind> watched = EnumSet.of(OreKind.DIAMOND);
 
@@ -207,6 +217,9 @@ public final class XrayEvidenceService implements IModerationService, ViolationS
     private void judge(Player player, MiningLedger ledger) {
         XrayVerdictRule.Verdict verdict = verdicts.judge(ledger, density.density(), watched);
         latest.put(player.getUniqueId(), verdict);
+        if (verdict.percent() >= SUSPECT_PERCENT && warned.tryUse(player.getUniqueId())) {
+            suspects.accept(player, verdict);
+        }
         if (verdict.score() < settings.xrayReportScore() || !between.tryUse(player.getUniqueId())) {
             return;
         }

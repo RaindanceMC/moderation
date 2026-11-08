@@ -20,6 +20,8 @@ import de.raindancer.modules.moderation.service.ViolationService;
 import de.raindancer.modules.moderation.store.AlertMutes;
 import de.raindancer.modules.moderation.store.AntiCheatDatabase;
 import de.raindancer.modules.moderation.store.EvidenceLog;
+import de.raindancer.modules.moderation.store.KnownAddresses;
+import de.raindancer.modules.moderation.service.AltWatch;
 import de.raindancer.modules.moderation.store.ViolationLedger;
 import de.raindancer.modules.moderation.util.CheatPermissions;
 import org.bukkit.entity.Player;
@@ -78,6 +80,21 @@ public final class AntiCheat {
         ViolationService violations = new ViolationService(new ActionRule(), alerts, punishments, evidence);
         violations.ledgerTo(ledger);
         violations.miningTo(mining);
+        // What this server lends a player that Grim cannot know about: a companion's back, flight, and its own lag.
+        violations.excusesWith(player -> {
+            var track = tracks.of(player);
+            org.bukkit.entity.Entity vehicle = player.getVehicle();
+            boolean riding = vehicle != null && context.core().companions().isCompanion(vehicle.getUniqueId());
+            long now = System.currentTimeMillis();
+            if (riding) {
+                track.lastRodeCompanion = now;
+            }
+            boolean flying = context.core().flight() != null && context.core().flight().isGranted(player.getUniqueId());
+            return new de.raindancer.modules.moderation.rules.ExcuseRule.Context(riding,
+                    track.lastRodeCompanion == 0 ? Long.MAX_VALUE : now - track.lastRodeCompanion, flying,
+                    org.bukkit.Bukkit.getTPS()[0], settings.current().antiCheat().minTps(), player.getPing());
+        });
+        KnownAddresses addresses = new KnownAddresses(database);
         AutoReportService autoReports = new AutoReportService(System::currentTimeMillis);
         violations.reportsTo(autoReports);
         PacketTap tap = new PacketTap(context.log());
@@ -93,9 +110,13 @@ public final class AntiCheat {
         AntiCheatServices services = new AntiCheatServices(context.plugin(), context.plugin().getServer(), context.core(),
                 context.log(), messages, context.chat(), () -> settings.current().antiCheat(), settings, tracks, violations, alerts, punishments,
                 evidence, tap, shield);
+        // The network's address key, the one blocked joins are hashed with, so a sighting here matches one anywhere.
+        byte[] addressKey = context.core().secrets().bytes("address-hash", 32,
+                folder.getParent().resolve("RainsCore").resolve("address-hash.key")).orElse(new byte[0]);
+        AltWatch alts = new AltWatch(addresses, addressKey, context.core().punishments(), alerts, context.log());
 
         List<IModerationListener> listeners = new ArrayList<>();
-        listeners.add(new ConnectionListener(services, listeners));
+        listeners.add(new ConnectionListener(services, listeners, alts));
         listeners.forEach(context::listener);
 
         // Players already online when the module starts (a reload) get what joining would have given them.

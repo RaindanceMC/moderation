@@ -20,6 +20,8 @@ public final class PlayerTrack {
     public volatile boolean kicking;
     /** Milliseconds, as the server measures it. */
     public volatile int ping;
+    /** When they were last on a companion's back, so the fall off it is still its fault; 0 for never. */
+    public volatile long lastRodeCompanion;
 
     public PlayerTrack(UUID id, String name, LongSupplier clock) {
         this.id = id;

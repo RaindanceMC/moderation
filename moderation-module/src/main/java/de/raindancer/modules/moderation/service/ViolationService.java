@@ -27,6 +27,14 @@ public final class ViolationService implements IModerationService {
     private volatile AutoReportService reports;
     private volatile de.raindancer.modules.moderation.store.ViolationLedger ledger;
     private volatile MiningRecords mining;
+    private final de.raindancer.modules.moderation.rules.ExcuseRule excuses = new de.raindancer.modules.moderation.rules.ExcuseRule();
+    private volatile java.util.function.Function<Player, de.raindancer.modules.moderation.rules.ExcuseRule.Context> context =
+            player -> de.raindancer.modules.moderation.rules.ExcuseRule.Context.NONE;
+
+    /** Where the server's own doings come from — riding a companion, lent flight, lag — for {@link ExcuseRule}. */
+    public void excusesWith(java.util.function.Function<Player, de.raindancer.modules.moderation.rules.ExcuseRule.Context> context) {
+        this.context = context == null ? player -> de.raindancer.modules.moderation.rules.ExcuseRule.Context.NONE : context;
+    }
 
     /** The x-ray side's per-player record, reset and measured afresh together with the anti-cheat's. */
     public interface MiningRecords {
@@ -54,9 +62,27 @@ public final class ViolationService implements IModerationService {
             return ActionRule.Decision.NOTHING;
         }
         AntiCheatSettings now = settings;
-        double level = track.violations().add(check, flag.weight());
-        gather(track.id(), check, Math.max(0, flag.weight()));
-        ActionRule.Decision decision = rule.decide(check, level, now);
+        de.raindancer.modules.moderation.rules.ExcuseRule.Context why = context.apply(player);
+        de.raindancer.modules.moderation.rules.ExcuseRule.Verdict verdict = excuses.judge(check, why);
+        if (verdict == de.raindancer.modules.moderation.rules.ExcuseRule.Verdict.EXCUSED) {
+            // Written down with its reason, for anybody reading the log later, but no level: what the server gave
+            // them explains it.
+            if (now.evidence()) {
+                Location at = player.getLocation();
+                evidence.add(player.getUniqueId(), player.getName(), new Evidence(System.currentTimeMillis(), check.key(),
+                        track.violations().level(check), "excused (" + excuses.reason(why) + "): " + flag.detail(),
+                        at.getWorld() == null ? "?" : at.getWorld().getName(), at.getBlockX(), at.getBlockY(), at.getBlockZ(),
+                        track.ping, Bukkit.getTPS()[0]));
+            }
+            return ActionRule.Decision.NOTHING;
+        }
+        boolean softened = verdict == de.raindancer.modules.moderation.rules.ExcuseRule.Verdict.SOFTENED;
+        double weight = softened ? flag.weight() * de.raindancer.modules.moderation.rules.ExcuseRule.LAG_WEIGHT : flag.weight();
+        double level = track.violations().add(check, weight);
+        gather(track.id(), check, Math.max(0, weight));
+        ActionRule.Decision decided = rule.decide(check, level, now);
+        // Lag never kicks or bans: the server or the line is to blame as likely as the player.
+        ActionRule.Decision decision = softened ? new ActionRule.Decision(decided.alert(), false, false) : decided;
         if (now.evidence()) {
             Location at = player.getLocation();
             evidence.add(player.getUniqueId(), player.getName(), new Evidence(System.currentTimeMillis(), check.key(),

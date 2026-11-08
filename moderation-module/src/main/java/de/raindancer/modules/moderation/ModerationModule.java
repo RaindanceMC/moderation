@@ -71,7 +71,7 @@ import java.util.UUID;
  */
 public final class ModerationModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.15.0")
+    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.16.0")
             .describedAs("Bans, mutes, reports, staff notes and the screens for them — over "
                     + "RainsCore's punishments, which stay whether or not this is installed")
             .by("Raindancer118");
@@ -504,6 +504,18 @@ public final class ModerationModule implements FlexModule {
 
         // Grim's flags, the network's record of them, anti-ESP and the client policy: one module with moderation.
         AntiCheatServices antiCheat = AntiCheat.start(context, settings, xrayEvidence);
+        // X-ray suspicion reaches staff the way a Grim flag does — on every server, with the player's name a click
+        // away — before it is sure enough for a report.
+        xrayEvidence.suspectsTo((player, verdict) -> {
+            StringBuilder why = new StringBuilder();
+            for (var signal : verdict.signals()) {
+                if (signal.score() >= 1) {
+                    why.append(why.isEmpty() ? "" : "; ").append(signal.summary());
+                }
+            }
+            antiCheat.alerts().staff("anticheat.xray-suspect", "player", player.getName(), "percent", verdict.percent(),
+                    "why", why.isEmpty() ? "mining that does not look honest" : why.toString());
+        });
         // /seed and the like from anybody but an owner, staff too: a warning, then a ban, on the record.
         var attemptSettings = context.settings(CheatAttemptSettings.class, CheatAttemptSettings.DEFAULTS);
         var attemptTries = new de.raindancer.modules.moderation.store.RuleOffences(

@@ -376,6 +376,10 @@ anticheat:
   client-screen: "<red><bold>Client not allowed</bold></red>\n\n<gray>This server does not allow <white><client></white>.\nJoin again with an ordinary client."
   client-refused: "<red><white><player></white> tried to join with <yellow><client></yellow> and was shown the door."
   brand: "<gray><white><player></white> joined with <yellow><brand></yellow>."
+  xray-suspect: "<gold>⛏ <click:run_command:'/mod xray'><hover:show_text:'<gray>Open the x-ray suspects'><white><player></white></hover></click> <gray>mines like an x-ray: <white><percent>%</white> sure <dark_gray>· <gray><why> <click:run_command:'/anticheat go <player>'><aqua>[Go]</aqua></click>"
+  # A word about a shared address: nobody is refused by it.
+  alt-banned: "<red>⚠ <white><player></white> <gray>joined from an address <red><names></red> <gray>used lately — and <names> is banned."
+  alt-crowd: "<yellow>⚠ <white><player></white> <gray>joined from an address <white><count></white> accounts share."
   alerts-on: "<green>Anti-cheat alerts are on. Brace for paperwork."
   alerts-off: "<yellow>Anti-cheat alerts are off. Ignorance is bliss, briefly."
   alert-muted: "<gray>You no longer hear about <yellow><check></yellow> in chat. <dark_gray>Evidence and reports go on. /anticheat alert on <check> to hear it again."
