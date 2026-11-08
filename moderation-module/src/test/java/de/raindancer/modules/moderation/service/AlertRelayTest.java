@@ -59,7 +59,7 @@ class AlertRelayTest {
         Server server = mock(Server.class);
         when(server.getOnlinePlayers()).thenAnswer(call -> Arrays.stream(online).map(each -> each.player).toList());
         Messages messages = wording();
-        AlertService alerts = new AlertService(server, messages, Log.of("test"), System::currentTimeMillis, hub.bus(id));
+        AlertService alerts = new AlertService(server, messages, Log.of("test"), System::currentTimeMillis, hub.bus(id), Runnable::run);
         for (Staff each : online) {
             alerts.listening(each.id, true);
         }
@@ -145,7 +145,7 @@ class AlertRelayTest {
         Server smpServer = mock(Server.class);
         when(smpServer.getOnlinePlayers()).thenReturn(List.of());
         Messages messages = wording();
-        AlertService smp = new AlertService(smpServer, messages, Log.of("test"), () -> now[0], hub.bus("smp"));
+        AlertService smp = new AlertService(smpServer, messages, Log.of("test"), () -> now[0], hub.bus("smp"), Runnable::run);
         services.add(smp);
         server("arena", there);
         Player subject = cheater();

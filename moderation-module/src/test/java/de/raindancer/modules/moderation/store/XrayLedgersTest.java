@@ -78,4 +78,35 @@ class XrayLedgersTest {
         assertThat(loaded.find(WHO)).isNull();
         assertThat(loaded.find(other)).isNotNull();
     }
+
+    @Test
+    @DisplayName("a flush with nothing changed since the last one leaves the file alone")
+    void cleanFlushWritesNothing(@TempDir Path folder) throws Exception {
+        XrayLedgers saved = new XrayLedgers(folder, () -> 0L);
+        saved.of(WHO, "Miner").dug("world", 7, 30, -7, MiningLedger.BAIT, 5L);
+        assertThat(saved.flush()).isTrue();
+        Files.delete(folder.resolve("xray-ledgers.yml"));
+
+        assertThat(saved.flush()).isTrue();
+
+        assertThat(folder.resolve("xray-ledgers.yml")).doesNotExist();
+    }
+
+    @Test
+    @DisplayName("only a changed ledger is rebuilt, and the file still holds everybody's")
+    void changedAndUnchangedTogether(@TempDir Path folder) {
+        UUID other = UUID.fromString("0f0c1a2b-3c4d-4e5f-8a9b-0c1d2e3f4a5b");
+        XrayLedgers saved = new XrayLedgers(folder, () -> 0L);
+        saved.of(WHO, "Miner").dug("world", 1, -50, 1, MiningLedger.BAIT, 1L);
+        saved.of(other, "Other").dug("world", 2, -50, 2, MiningLedger.BAIT, 2L);
+        assertThat(saved.flush()).isTrue();
+        saved.of(WHO, "Miner").dug("world", 3, -50, 3, MiningLedger.BAIT, 3L);
+        assertThat(saved.flush()).isTrue();
+
+        XrayLedgers loaded = new XrayLedgers(folder, () -> 0L);
+        loaded.load();
+
+        assertThat(loaded.find(WHO).finds()).hasSize(2);
+        assertThat(loaded.find(other).finds()).hasSize(1);
+    }
 }

@@ -9,6 +9,7 @@ import de.raindancer.core.ui.profile.PlayerSwitch;
 import de.raindancer.modules.moderation.AntiCheatSettings;
 import de.raindancer.modules.moderation.model.AlertDigest;
 import de.raindancer.modules.moderation.model.CheckType;
+import de.raindancer.modules.moderation.util.AsyncPublisher;
 import de.raindancer.modules.moderation.util.CheatPermissions;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -45,7 +46,7 @@ public final class AlertService implements IModerationService {
     private final LogChannel log;
     private final LongSupplier clock;
     private final AlertDigest digest;
-    private final NetworkBus bus;
+    private final AsyncPublisher publisher;
     private final NetworkBus.Subscription heard;
     private volatile de.raindancer.modules.moderation.store.AlertMutes mutes;
     /** Whether each staff member wants alerts, read from their profile on join so no thread touches it later. */
@@ -57,13 +58,20 @@ public final class AlertService implements IModerationService {
     }
 
     public AlertService(Server server, Messages messages, LogChannel log, LongSupplier clock, NetworkBus bus) {
+        this(server, messages, log, clock, bus, null);
+    }
+
+    /** @param publishing runs the publishing; null for a thread of its own — a direct executor makes it synchronous */
+    public AlertService(Server server, Messages messages, LogChannel log, LongSupplier clock, NetworkBus bus,
+                        java.util.concurrent.Executor publishing) {
         this.server = server;
         this.messages = messages;
         this.log = log;
         this.clock = clock;
         this.digest = new AlertDigest(clock);
-        this.bus = bus == null ? NetworkBus.NONE : bus;
-        this.heard = this.bus.subscribe(TOPIC, event -> {
+        NetworkBus network = bus == null ? NetworkBus.NONE : bus;
+        this.publisher = publishing == null ? new AsyncPublisher(network, "anticheat") : new AsyncPublisher(network, publishing);
+        this.heard = network.subscribe(TOPIC, event -> {
             try {
                 heard(event);
             } catch (RuntimeException failed) {
@@ -74,6 +82,7 @@ public final class AlertService implements IModerationService {
 
     public void close() {
         heard.close();
+        publisher.close();
     }
 
     /** A failed check past its alert level: the log hears every one, staff the first and then a line per window. */
@@ -182,7 +191,7 @@ public final class AlertService implements IModerationService {
     }
 
     private void publish(YamlConfiguration payload) {
-        bus.publish(TOPIC, payload.getString("kind", ""), payload.saveToString());
+        publisher.publish(TOPIC, payload.getString("kind", ""), payload.saveToString());
     }
 
     /** What another server told its staff: worded here, for the staff here, with that server's name in front. */

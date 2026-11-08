@@ -316,8 +316,9 @@ public final class EvidenceLog {
                 for (Map.Entry<UUID, List<Evidence>> each : adds.entrySet()) {
                     for (Evidence evidence : each.getValue()) {
                         bind(insert, each.getKey(), evidence);
-                        insert.executeUpdate();
+                        insert.addBatch();
                     }
+                    insert.executeBatch();
                     prune.setString(1, each.getKey().toString());
                     prune.setString(2, each.getKey().toString());
                     prune.setInt(3, keep);

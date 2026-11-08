@@ -23,6 +23,10 @@ public final class XrayLedgers {
     private final LongSupplier clock;
     private final Map<UUID, MiningLedger> ledgers = new ConcurrentHashMap<>();
     private final Map<UUID, String> names = new ConcurrentHashMap<>();
+    /** Whose ledger may have changed since it was last written; everybody else's saved rows are reused. */
+    private final Set<UUID> dirty = ConcurrentHashMap.newKeySet();
+    private final Map<UUID, Map<String, Object>> rows = new ConcurrentHashMap<>();
+    private volatile boolean membership = true;
 
     public XrayLedgers(Path dataFolder, LongSupplier clock) {
         this.store = new YamlStore(dataFolder.resolve("xray-ledgers.yml"));
@@ -33,11 +37,17 @@ public final class XrayLedgers {
         if (name != null) {
             names.put(who, name);
         }
+        dirty.add(who);
         return ledgers.computeIfAbsent(who, ignored -> new MiningLedger(clock.getAsLong()));
     }
 
+    /** Read-mostly, but callers also decay or restart a ledger through it, so it counts as possibly changed. */
     public MiningLedger find(UUID who) {
-        return ledgers.get(who);
+        MiningLedger found = ledgers.get(who);
+        if (found != null) {
+            dirty.add(who);
+        }
+        return found;
     }
 
     public String nameOf(UUID who) {
@@ -50,10 +60,15 @@ public final class XrayLedgers {
 
     public void forget(UUID who) {
         ledgers.remove(who);
+        rows.remove(who);
+        dirty.remove(who);
+        membership = true;
     }
 
     public void load() {
         ledgers.clear();
+        rows.clear();
+        dirty.clear();
         ConfigurationSection root = store.read().getConfigurationSection("players");
         if (root == null) {
             return;
@@ -137,33 +152,62 @@ public final class XrayLedgers {
         }
     }
 
+    /** @return whether the file is as it should be; with nothing changed since the last write it is not touched */
     public boolean flush() {
-        return store.write(yaml -> ledgers.forEach((who, ledger) -> {
-            String key = "players." + who;
-            yaml.set(key + ".name", names.getOrDefault(who, ""));
-            yaml.set(key + ".updated", ledger.updatedMillis());
-            if (ledger.freshFromMillis() > 0) {
-                yaml.set(key + ".fresh-from", ledger.freshFromMillis());
+        if (dirty.isEmpty() && !membership) {
+            return true;
+        }
+        boolean complete = membership;
+        Set<UUID> changed = Set.copyOf(dirty);
+        membership = false;
+        dirty.removeAll(changed);
+        Map<UUID, Map<String, Object>> built = new HashMap<>();
+        for (UUID who : changed) {
+            MiningLedger ledger = ledgers.get(who);
+            if (ledger != null) {
+                built.put(who, row(who, ledger));
             }
-            yaml.set(key + ".bait-reached", ledger.baitReached());
-            yaml.set(key + ".bait-expected", ledger.baitExpected());
-            yaml.set(key + ".toward", ledger.turnsToward());
-            yaml.set(key + ".away", ledger.turnsAway());
-            ledger.revealedByBand().forEach((band, value) -> yaml.set(key + ".revealed." + YamlStore.asPathPart(band), value));
-            ledger.veinsByBand().forEach((band, kinds) -> kinds.forEach((kind, value) ->
-                    yaml.set(key + ".veins." + YamlStore.asPathPart(band) + "." + kind.name(), value)));
-            yaml.set(key + ".trail-world", ledger.trailWorld());
-            List<String> trail = new ArrayList<>();
-            for (int[] step : ledger.trail()) {
-                trail.add(step[0] + "," + step[1] + "," + step[2] + "," + step[3]);
-            }
-            yaml.set(key + ".trail", trail);
-            List<String> finds = new ArrayList<>();
-            for (MiningLedger.Find find : ledger.finds()) {
-                finds.add(find.x() + "," + find.y() + "," + find.z() + "," + find.kind() + "," + find.atMillis() + "," + find.world());
-            }
-            yaml.set(key + ".finds", null);
-            yaml.set(key + ".found", finds);
-        }));
+        }
+        rows.putAll(built);
+        for (UUID who : ledgers.keySet()) {
+            rows.computeIfAbsent(who, id -> row(id, ledgers.get(id)));
+        }
+        rows.keySet().retainAll(ledgers.keySet());
+        Map<UUID, Map<String, Object>> snapshot = new HashMap<>(rows);
+        boolean written = store.write(yaml -> snapshot.forEach((who, row) ->
+                row.forEach((path, value) -> yaml.set("players." + who + "." + path, value))));
+        if (!written) {
+            dirty.addAll(changed);
+            membership = membership || complete;
+        }
+        return written;
+    }
+
+    private Map<String, Object> row(UUID who, MiningLedger ledger) {
+        Map<String, Object> row = new java.util.LinkedHashMap<>();
+        row.put("name", names.getOrDefault(who, ""));
+        row.put("updated", ledger.updatedMillis());
+        if (ledger.freshFromMillis() > 0) {
+            row.put("fresh-from", ledger.freshFromMillis());
+        }
+        row.put("bait-reached", ledger.baitReached());
+        row.put("bait-expected", ledger.baitExpected());
+        row.put("toward", ledger.turnsToward());
+        row.put("away", ledger.turnsAway());
+        ledger.revealedByBand().forEach((band, value) -> row.put("revealed." + YamlStore.asPathPart(band), value));
+        ledger.veinsByBand().forEach((band, kinds) -> kinds.forEach((kind, value) ->
+                row.put("veins." + YamlStore.asPathPart(band) + "." + kind.name(), value)));
+        row.put("trail-world", ledger.trailWorld());
+        List<String> trail = new ArrayList<>();
+        for (int[] step : ledger.trail()) {
+            trail.add(step[0] + "," + step[1] + "," + step[2] + "," + step[3]);
+        }
+        row.put("trail", trail);
+        List<String> finds = new ArrayList<>();
+        for (MiningLedger.Find find : ledger.finds()) {
+            finds.add(find.x() + "," + find.y() + "," + find.z() + "," + find.kind() + "," + find.atMillis() + "," + find.world());
+        }
+        row.put("found", finds);
+        return row;
     }
 }

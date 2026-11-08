@@ -106,7 +106,7 @@ public final class StaffAlerts {
         }
     }
 
-    private final NetworkBus bus;
+    private final AsyncPublisher publisher;
     private final Consumer<Alert> here;
     private final NetworkBus.Subscription heard;
 
@@ -115,19 +115,26 @@ public final class StaffAlerts {
      *             servers' (on the bus's thread, so it hops to the right scheduler itself)
      */
     public StaffAlerts(NetworkBus bus, Consumer<Alert> here) {
-        this.bus = bus == null ? NetworkBus.NONE : bus;
+        this(bus, here, null);
+    }
+
+    /** @param publishing runs the publishing; null for a thread of its own — a direct executor makes it synchronous */
+    public StaffAlerts(NetworkBus bus, Consumer<Alert> here, java.util.concurrent.Executor publishing) {
+        NetworkBus network = bus == null ? NetworkBus.NONE : bus;
+        this.publisher = publishing == null ? new AsyncPublisher(network, "staff-alerts") : new AsyncPublisher(network, publishing);
         this.here = here;
-        this.heard = this.bus.subscribe(TOPIC, event -> Alert.decode(event.payload(), event.server()).ifPresent(here));
+        this.heard = network.subscribe(TOPIC, event -> Alert.decode(event.payload(), event.server()).ifPresent(here));
     }
 
     /** Tells the staff here and everywhere. */
     public void tell(Alert alert) {
         here.accept(alert);
-        bus.publish(TOPIC, alert.permission(), alert.encode());
+        publisher.publish(TOPIC, alert.permission(), alert.encode());
     }
 
     public void close() {
         heard.close();
+        publisher.close();
     }
 
     /**

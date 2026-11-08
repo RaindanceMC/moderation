@@ -23,8 +23,8 @@ class StaffAlertsTest {
     private final LocalBus.Hub hub = new LocalBus.Hub();
     private final List<StaffAlerts.Alert> smpHeard = new CopyOnWriteArrayList<>();
     private final List<StaffAlerts.Alert> arenaHeard = new CopyOnWriteArrayList<>();
-    private final StaffAlerts smp = new StaffAlerts(hub.bus("smp"), smpHeard::add);
-    private final StaffAlerts arena = new StaffAlerts(hub.bus("arena"), arenaHeard::add);
+    private final StaffAlerts smp = new StaffAlerts(hub.bus("smp"), smpHeard::add, Runnable::run);
+    private final StaffAlerts arena = new StaffAlerts(hub.bus("arena"), arenaHeard::add, Runnable::run);
 
     private final UUID subject = UUID.randomUUID();
     private final StaffAlerts.Alert report = new StaffAlerts.Alert("moderation.reports", subject,
