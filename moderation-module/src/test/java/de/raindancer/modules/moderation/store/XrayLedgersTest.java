@@ -109,4 +109,25 @@ class XrayLedgersTest {
         assertThat(loaded.find(WHO).finds()).hasSize(2);
         assertThat(loaded.find(other).finds()).hasSize(1);
     }
+
+    @Test
+    @DisplayName("a ledger written on one server is read on another through the network's database")
+    void theNetworkCarriesALedger(@TempDir Path folder) throws Exception {
+        try (de.raindancer.core.data.sql.Database shared = de.raindancer.core.data.sql.Database.open(
+                folder.resolve("anticheat.db"), AntiCheatDatabase.SCHEMA, () -> false)) {
+            XrayLedgers smp = new XrayLedgers(folder.resolve("smp"), () -> 0L);
+            smp.mirrorTo(shared);
+            smp.of(WHO, "Miner").dug("world", 1, 2, 3, MiningLedger.BAIT, 1_760_000_000_000L);
+            assertThat(smp.flush()).isTrue();
+
+            XrayLedgers oneblock = new XrayLedgers(folder.resolve("oneblock"), () -> 0L);
+            oneblock.mirrorTo(shared);
+            assertThat(oneblock.find(WHO)).isNull();
+            oneblock.arriving(WHO);
+            assertThat(oneblock.find(WHO)).isNotNull();
+            assertThat(oneblock.find(WHO).finds()).containsExactly(
+                    new MiningLedger.Find("world", 1, 2, 3, MiningLedger.BAIT, 1_760_000_000_000L));
+            assertThat(oneblock.nameOf(WHO)).isEqualTo("Miner");
+        }
+    }
 }

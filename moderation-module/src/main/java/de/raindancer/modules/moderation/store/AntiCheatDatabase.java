@@ -45,6 +45,14 @@ public final class AntiCheatDatabase {
                 address   TEXT    NOT NULL,
                 last_seen INTEGER NOT NULL,
                 PRIMARY KEY (player, address)
+            )""",
+            // 3.17.0: every player's mining ledger, so an x-ray suspect who hops servers is the same suspect.
+            """
+            CREATE TABLE ac_xray (
+                player  TEXT    NOT NULL PRIMARY KEY,
+                name    TEXT    NOT NULL,
+                updated INTEGER NOT NULL,
+                data    TEXT    NOT NULL
             )""");
 
     private AntiCheatDatabase() {

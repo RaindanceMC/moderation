@@ -85,6 +85,74 @@ public final class XrayLedgers {
                 continue;
             }
             try {
+                parse(who, row);            } catch (RuntimeException malformed) {
+                // One unreadable player costs that player's ledger, not everybody's.
+            }
+        }
+    }
+
+    /** @return whether the file is as it should be; with nothing changed since the last write it is not touched */
+    public boolean flush() {
+        if (dirty.isEmpty() && !membership) {
+            return true;
+        }
+        boolean complete = membership;
+        Set<UUID> changed = Set.copyOf(dirty);
+        membership = false;
+        dirty.removeAll(changed);
+        Map<UUID, Map<String, Object>> built = new HashMap<>();
+        for (UUID who : changed) {
+            MiningLedger ledger = ledgers.get(who);
+            if (ledger != null) {
+                built.put(who, row(who, ledger));
+            }
+        }
+        rows.putAll(built);
+        for (UUID who : ledgers.keySet()) {
+            rows.computeIfAbsent(who, id -> row(id, ledgers.get(id)));
+        }
+        rows.keySet().retainAll(ledgers.keySet());
+        Map<UUID, Map<String, Object>> snapshot = new HashMap<>(rows);
+        boolean written = store.write(yaml -> snapshot.forEach((who, row) ->
+                row.forEach((path, value) -> yaml.set("players." + who + "." + path, value))));
+        mirrorRows(built);
+        if (!written) {
+            dirty.addAll(changed);
+            membership = membership || complete;
+        }
+        return written;
+    }
+
+    private Map<String, Object> row(UUID who, MiningLedger ledger) {
+        Map<String, Object> row = new java.util.LinkedHashMap<>();
+        row.put("name", names.getOrDefault(who, ""));
+        row.put("updated", ledger.updatedMillis());
+        if (ledger.freshFromMillis() > 0) {
+            row.put("fresh-from", ledger.freshFromMillis());
+        }
+        row.put("bait-reached", ledger.baitReached());
+        row.put("bait-expected", ledger.baitExpected());
+        row.put("toward", ledger.turnsToward());
+        row.put("away", ledger.turnsAway());
+        ledger.revealedByBand().forEach((band, value) -> row.put("revealed." + YamlStore.asPathPart(band), value));
+        ledger.veinsByBand().forEach((band, kinds) -> kinds.forEach((kind, value) ->
+                row.put("veins." + YamlStore.asPathPart(band) + "." + kind.name(), value)));
+        row.put("trail-world", ledger.trailWorld());
+        List<String> trail = new ArrayList<>();
+        for (int[] step : ledger.trail()) {
+            trail.add(step[0] + "," + step[1] + "," + step[2] + "," + step[3]);
+        }
+        row.put("trail", trail);
+        List<String> finds = new ArrayList<>();
+        for (MiningLedger.Find find : ledger.finds()) {
+            finds.add(find.x() + "," + find.y() + "," + find.z() + "," + find.kind() + "," + find.atMillis() + "," + find.world());
+        }
+        row.put("found", finds);
+        return row;
+    }
+
+    /** One saved row into memory: the ledger and the name. Throws on a malformed row. */
+    private void parse(UUID who, ConfigurationSection row) {
                 Map<String, Double> revealed = new HashMap<>();
                 ConfigurationSection bands = row.getConfigurationSection("revealed");
                 if (bands != null) {
@@ -146,68 +214,74 @@ public final class XrayLedgers {
                 if (name != null && !name.isEmpty()) {
                     names.put(who, name);
                 }
-            } catch (RuntimeException malformed) {
-                // One unreadable player costs that player's ledger, not everybody's.
-            }
-        }
     }
 
-    /** @return whether the file is as it should be; with nothing changed since the last write it is not touched */
-    public boolean flush() {
-        if (dirty.isEmpty() && !membership) {
-            return true;
-        }
-        boolean complete = membership;
-        Set<UUID> changed = Set.copyOf(dirty);
-        membership = false;
-        dirty.removeAll(changed);
-        Map<UUID, Map<String, Object>> built = new HashMap<>();
-        for (UUID who : changed) {
-            MiningLedger ledger = ledgers.get(who);
-            if (ledger != null) {
-                built.put(who, row(who, ledger));
-            }
-        }
-        rows.putAll(built);
-        for (UUID who : ledgers.keySet()) {
-            rows.computeIfAbsent(who, id -> row(id, ledgers.get(id)));
-        }
-        rows.keySet().retainAll(ledgers.keySet());
-        Map<UUID, Map<String, Object>> snapshot = new HashMap<>(rows);
-        boolean written = store.write(yaml -> snapshot.forEach((who, row) ->
-                row.forEach((path, value) -> yaml.set("players." + who + "." + path, value))));
-        if (!written) {
-            dirty.addAll(changed);
-            membership = membership || complete;
-        }
-        return written;
+    // ------------------------------------------------------------------ the network's copy
+
+    private volatile de.raindancer.core.data.sql.Database mirror;
+
+    /**
+     * Keeps every written ledger in the network's anti-cheat database too, and reads a player's from there when they
+     * arrive, so an x-ray suspect who hops servers is the same suspect everywhere. The file stays the server's own.
+     */
+    public void mirrorTo(de.raindancer.core.data.sql.Database shared) {
+        this.mirror = shared;
     }
 
-    private Map<String, Object> row(UUID who, MiningLedger ledger) {
-        Map<String, Object> row = new java.util.LinkedHashMap<>();
-        row.put("name", names.getOrDefault(who, ""));
-        row.put("updated", ledger.updatedMillis());
-        if (ledger.freshFromMillis() > 0) {
-            row.put("fresh-from", ledger.freshFromMillis());
+    /** A player arrived: the network's newer ledger, if there is one, replaces what this server last saw. Off the server's threads. */
+    public void arriving(UUID who) {
+        de.raindancer.core.data.sql.Database shared = mirror;
+        if (shared == null || who == null) {
+            return;
         }
-        row.put("bait-reached", ledger.baitReached());
-        row.put("bait-expected", ledger.baitExpected());
-        row.put("toward", ledger.turnsToward());
-        row.put("away", ledger.turnsAway());
-        ledger.revealedByBand().forEach((band, value) -> row.put("revealed." + YamlStore.asPathPart(band), value));
-        ledger.veinsByBand().forEach((band, kinds) -> kinds.forEach((kind, value) ->
-                row.put("veins." + YamlStore.asPathPart(band) + "." + kind.name(), value)));
-        row.put("trail-world", ledger.trailWorld());
-        List<String> trail = new ArrayList<>();
-        for (int[] step : ledger.trail()) {
-            trail.add(step[0] + "," + step[1] + "," + step[2] + "," + step[3]);
+        shared.read(connection -> {
+            try (java.sql.PreparedStatement query = connection.prepareStatement(
+                    "SELECT name, updated, data FROM ac_xray WHERE player = ?")) {
+                query.setString(1, who.toString());
+                try (java.sql.ResultSet rows = query.executeQuery()) {
+                    if (!rows.next()) {
+                        return null;
+                    }
+                    long updated = rows.getLong(2);
+                    MiningLedger here = ledgers.get(who);
+                    if (here != null && here.updatedMillis() >= updated) {
+                        return null;
+                    }
+                    org.bukkit.configuration.file.YamlConfiguration yaml = new org.bukkit.configuration.file.YamlConfiguration();
+                    yaml.loadFromString(rows.getString(3));
+                    ConfigurationSection row = yaml.getConfigurationSection("row");
+                    if (row != null) {
+                        parse(who, row);
+                        rows.getString(1);
+                    }
+                }
+            } catch (org.bukkit.configuration.InvalidConfigurationException | RuntimeException malformed) {
+                // The network's copy is unreadable: this server's own stands.
+            }
+            return null;
+        });
+    }
+
+    private void mirrorRows(Map<UUID, Map<String, Object>> changed) {
+        de.raindancer.core.data.sql.Database shared = mirror;
+        if (shared == null || changed.isEmpty()) {
+            return;
         }
-        row.put("trail", trail);
-        List<String> finds = new ArrayList<>();
-        for (MiningLedger.Find find : ledger.finds()) {
-            finds.add(find.x() + "," + find.y() + "," + find.z() + "," + find.kind() + "," + find.atMillis() + "," + find.world());
-        }
-        row.put("found", finds);
-        return row;
+        shared.write(connection -> {
+            try (java.sql.PreparedStatement row = connection.prepareStatement(
+                    "INSERT INTO ac_xray (player, name, updated, data) VALUES (?,?,?,?) "
+                            + "ON CONFLICT(player) DO UPDATE SET name = excluded.name, updated = excluded.updated, data = excluded.data")) {
+                for (Map.Entry<UUID, Map<String, Object>> entry : changed.entrySet()) {
+                    org.bukkit.configuration.file.YamlConfiguration yaml = new org.bukkit.configuration.file.YamlConfiguration();
+                    entry.getValue().forEach((path, value) -> yaml.set("row." + path, value));
+                    row.setString(1, entry.getKey().toString());
+                    row.setString(2, String.valueOf(entry.getValue().getOrDefault("name", "")));
+                    row.setLong(3, ((Number) entry.getValue().getOrDefault("updated", 0L)).longValue());
+                    row.setString(4, yaml.saveToString());
+                    row.addBatch();
+                }
+                row.executeBatch();
+            }
+        });
     }
 }
