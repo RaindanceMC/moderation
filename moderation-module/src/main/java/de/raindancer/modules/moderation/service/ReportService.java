@@ -53,6 +53,7 @@ public final class ReportService implements IModerationService {
     private final StaffAlerts alerts;
 
     private volatile ModerationSettings settings;
+    private volatile de.raindancer.core.moderation.feed.ModerationFeed feed;
 
     public ReportService(Plugin plugin, Server server, ReportRegistry reports, ReportStorage storage,
                          Audit audit, Messages messages, Chat chat, PendingNotices pending,
@@ -70,6 +71,20 @@ public final class ReportService implements IModerationService {
         this.alerts = alerts;
         this.storage.bind(reports);
         settings(settings);
+    }
+
+    /** Where every report a player files is also told, for whoever passes them on (a Discord feed); none tells nobody. */
+    public void feedTo(de.raindancer.core.moderation.feed.ModerationFeed feed) {
+        this.feed = feed;
+    }
+
+    /** Players' reports only: one a machine filed (no reporter) is the anti-cheat's own and is told elsewhere. */
+    static void tell(de.raindancer.core.moderation.feed.ModerationFeed feed, Report filed) {
+        if (feed == null || filed.reporter() == null) {
+            return;
+        }
+        feed.reported(new de.raindancer.core.moderation.feed.ReportNotice(filed.id(), filed.reporter(), filed.reporterName(),
+                filed.subject(), filed.subjectName(), filed.text()));
     }
 
     /** Reads the queue into the registry. Called once, when the module starts. */
@@ -112,6 +127,7 @@ public final class ReportService implements IModerationService {
                 text, now).withPreset(preset == null ? null : preset.name()).withPlaces(reporterAt, subjectAt));
 
         record("report-filed", reporter, reporterName, subject, subjectName, filed.id(), text);
+        tell(feed, filed);
         if (settings.notifyStaffOnReport()) {
             // Excludes the subject even when they hold the reports permission themselves — a trial mod
             // reporting a mod must not out itself in the very chat line meant to tell the rest of staff.

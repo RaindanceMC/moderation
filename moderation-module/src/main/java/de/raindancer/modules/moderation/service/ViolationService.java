@@ -25,6 +25,7 @@ public final class ViolationService implements IModerationService {
     private volatile AntiCheatSettings settings = AntiCheatSettings.DEFAULTS;
 
     private volatile AutoReportService reports;
+    private volatile de.raindancer.core.moderation.feed.ModerationFeed feed;
     private volatile de.raindancer.modules.moderation.store.ViolationLedger ledger;
     private volatile MiningRecords mining;
     private final de.raindancer.modules.moderation.rules.ExcuseRule excuses = new de.raindancer.modules.moderation.rules.ExcuseRule();
@@ -92,6 +93,7 @@ public final class ViolationService implements IModerationService {
         alerts.verbose(player, check, level, flag.detail());
         if (decision.alert()) {
             alerts.alert(player, check, level, flag.detail(), track.ping);
+            tell(feed, player, check, level, flag.detail(), track.ping);
         }
         if (decision.ban()) {
             punishments.atBanLevel(player, track, check, level);
@@ -109,6 +111,23 @@ public final class ViolationService implements IModerationService {
                             + " " + at.getBlockX() + " " + at.getBlockY() + " " + at.getBlockZ());
         }
         return decision;
+    }
+
+    /** Where every alert is also told, for whoever passes them on (a Discord feed); none tells nobody. */
+    public void feedTo(de.raindancer.core.moderation.feed.ModerationFeed feed) {
+        this.feed = feed;
+    }
+
+    static void tell(de.raindancer.core.moderation.feed.ModerationFeed feed, Player player, CheckType check, double level,
+                     String detail, int ping) {
+        if (feed == null) {
+            return;
+        }
+        String brand = player.getClientBrandName();
+        String client = de.raindancer.core.platform.bukkit.ClientVersions.of(player.getUniqueId())
+                .map(de.raindancer.core.platform.bukkit.ClientVersions.Version::name).orElse(null);
+        feed.anticheat(new de.raindancer.core.moderation.feed.AnticheatAlert(player.getUniqueId(), player.getName(),
+                check.title(), level, detail, ping, client, brand));
     }
 
     private void halve(PlayerTrack track, CheckType check) {

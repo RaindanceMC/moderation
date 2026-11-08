@@ -71,7 +71,7 @@ import java.util.UUID;
  */
 public final class ModerationModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.19.0")
+    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.20.0")
             .describedAs("Bans, mutes, reports, staff notes and the screens for them — over "
                     + "RainsCore's punishments, which stay whether or not this is installed")
             .by("Raindancer118");
@@ -270,6 +270,7 @@ public final class ModerationModule implements FlexModule {
         reportService = new ReportService(context.plugin(), server, reports, reportStorage,
                 context.core().audit(), context.core().messages(), context.chat(), pending,
                 this::filingRule, staffAlerts, settings.current());
+        reportService.feedTo(context.core().moderationFeed());
         suspiciousCommands = new SuspiciousCommandService(reportService, new SuspiciousCommandRule(),
                 settings.current());
         de.raindancer.modules.moderation.model.OreDensity oreDensity = new de.raindancer.modules.moderation.model.OreDensity();

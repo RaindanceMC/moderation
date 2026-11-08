@@ -79,6 +79,7 @@ public final class AntiCheat {
         PunishService punishments = new PunishService(context.plugin(), context.core(), messages, alerts);
         ViolationService violations = new ViolationService(new ActionRule(), alerts, punishments, evidence);
         violations.ledgerTo(ledger);
+        violations.feedTo(context.core().moderationFeed());
         violations.miningTo(mining);
         // What this server lends a player that Grim cannot know about: a companion's back, flight, and its own lag.
         violations.excusesWith(player -> {
