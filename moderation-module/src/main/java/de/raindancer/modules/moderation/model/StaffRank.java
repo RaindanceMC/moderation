@@ -29,7 +29,7 @@ public enum StaffRank {
     MOD("Moderator", 2, "aqua", Material.IRON_HELMET,
             "The full working set, chat and anticheat included: mute, kick, tempban, freeze, vanish, claims."),
     ADMIN("Admin", 3, "gold", Material.DIAMOND_HELMET,
-            "Everything a mod has, plus permanent bans, the settings, the anticheat's checks and the bypasses."),
+            "Everything a mod has, plus permanent bans, the settings, the anticheat's checks and the bypasses, and every cosmetic."),
     /** An operator: every permission of every plugin, which is why it seeds no nodes of its own. */
     OWNER("Owner", 4, "red", Material.NETHERITE_HELMET,
             "The server operator: every permission of every plugin, and the vanilla commands."),
@@ -81,7 +81,9 @@ public enum StaffRank {
     /** Switching dev mode ({@code /dev}), in which a dev holds every permission. */
     public static final String DEV_MODE = "rains.moderation.dev";
     /** What a rung holds off duty too; everything else of theirs needs {@code rains:powers=on}. */
-    public static final Set<String> ALWAYS = Set.of(ModerationPermission.STAFF_CHAT.node(), ADMIN_MODE);
+    public static final Set<String> ALWAYS = java.util.stream.Stream.concat(
+            java.util.stream.Stream.of(ModerationPermission.STAFF_CHAT.node(), ADMIN_MODE), ALL_COSMETICS.stream())
+            .collect(java.util.stream.Collectors.toUnmodifiableSet());
     /**
      * The vanilla commands a builder works with in admin mode — blocks, structures, entities and items. Nothing
      * that reaches other players (kill, teleport) or the server's rules (gamerule, time, weather).
@@ -136,6 +138,8 @@ public enum StaffRank {
                 everything.add(WARP_MANAGE);
                 everything.add(HOMES_UNLIMITED);
                 everything.add(HUNGERGAMES_ADMIN);
+                // A perk, not a power: theirs on duty or not (ALWAYS).
+                everything.addAll(ALL_COSMETICS);
                 everything.add(ANTICHEAT_MANAGE);
                 everything.add(ADMIN_MODE_OTHERS);
                 everything.add(GAME_MODES_PREFIX + "creative");

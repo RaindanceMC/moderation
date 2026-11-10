@@ -158,6 +158,22 @@ class StaffRankTest {
                 assertThat(rank.nodes()).doesNotContain("hungergames.protection.bypass");
             }
         }
+        @Test
+        @DisplayName("admins and owners have every cosmetic, on duty or not; support, mods and the other departments do not")
+        void cosmeticsForTheTop() {
+            for (StaffRank top : java.util.List.of(StaffRank.ADMIN, StaffRank.OWNER)) {
+                assertThat(top.nodes()).containsAll(StaffRank.ALL_COSMETICS);
+            }
+            assertThat(StaffRank.ADMIN.seed().nodes())
+                    .filteredOn(node -> StaffRank.ALL_COSMETICS.contains(node.permission()))
+                    .hasSize(StaffRank.ALL_COSMETICS.size())
+                    .allSatisfy(node -> assertThat(node.context()).isEmpty());
+            for (StaffRank other : java.util.List.of(StaffRank.SUPPORT, StaffRank.MOD, StaffRank.BUILDER,
+                    StaffRank.DEV, StaffRank.TESTER)) {
+                assertThat(other.nodes()).doesNotContainAnyElementsOf(StaffRank.ALL_COSMETICS);
+            }
+        }
+
     }
 
     @Nested
@@ -165,7 +181,7 @@ class StaffRankTest {
     class Departments {
 
         @Test
-        @DisplayName("a creator founds a guild for free and has every cosmetic; nobody else is given that")
+        @DisplayName("a creator founds a guild for free and has every cosmetic; nobody else founds for free")
         void creatorFoundsForFree() {
             assertThat(StaffRank.CREATOR.nodes()).contains(StaffRank.GUILD_FOUND_FREE)
                     .containsAll(StaffRank.ALL_COSMETICS);
@@ -175,8 +191,7 @@ class StaffRankTest {
             });
             for (StaffRank other : StaffRank.values()) {
                 if (other != StaffRank.CREATOR) {
-                    assertThat(other.nodes()).doesNotContain(StaffRank.GUILD_FOUND_FREE)
-                            .doesNotContainAnyElementsOf(StaffRank.ALL_COSMETICS);
+                    assertThat(other.nodes()).doesNotContain(StaffRank.GUILD_FOUND_FREE);
                 }
             }
         }
