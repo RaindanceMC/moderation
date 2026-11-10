@@ -37,12 +37,17 @@ public enum StaffRank {
     BUILDER("Builder", 0, "yellow", Material.BRICKS,
             "Builds the hub, the maps and the event stages. Creative in the build world; creative, WorldEdit and the building commands anywhere in admin mode."),
     CREATOR("Creator", 0, "light_purple", Material.SPYGLASS,
-            "Makes videos and streams about the server."),
+            "Makes videos and streams about the server. Founds a guild for free and has every cosmetic."),
     DEV("Developer", 0, "dark_aqua", Material.COMMAND_BLOCK,
             "Works on the plugins: performance tools, maintenance mode, and every permission while /dev is on."),
     TESTER("Tester", 0, "gray", Material.TARGET,
             "Tries new features before everybody else does.");
 
+    /** Founding a guild without its price or the hours played first. */
+    public static final String GUILD_FOUND_FREE = "rainsguilds.found.free";
+    /** Every cosmetic, nothing bought: what is for sale, every weapon skin, the whole particle and sound library. */
+    public static final List<String> ALL_COSMETICS = List.of("rainscosmetics.free", "rainscosmetics.skins",
+            "rainscosmetics.skins.all", "rainscosmetics.library", "rainscosmetics.particle.coffee");
     /** Claim administration — acting on somebody else's claim. Not an exemption from anything. */
     public static final String CLAIM_ADMIN = "rec.admin";
     /** Holding more claims than anybody else; the other claim exemptions are claims' own bypass toggle. */
@@ -159,6 +164,10 @@ public enum StaffRank {
                 everything.add("rainsperformance.teleport");
                 everything.add("rainscore.maintenance");
                 everything.add(DEV_MODE);
+            }
+            case CREATOR -> {
+                everything.add(GUILD_FOUND_FREE);
+                everything.addAll(ALL_COSMETICS);
             }
             case TESTER -> everything.add(ModerationPermission.STAFF_CHAT.node());
             default -> { }

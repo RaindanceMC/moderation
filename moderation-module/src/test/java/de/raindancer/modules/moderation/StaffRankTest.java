@@ -165,6 +165,23 @@ class StaffRankTest {
     class Departments {
 
         @Test
+        @DisplayName("a creator founds a guild for free and has every cosmetic; nobody else is given that")
+        void creatorFoundsForFree() {
+            assertThat(StaffRank.CREATOR.nodes()).contains(StaffRank.GUILD_FOUND_FREE)
+                    .containsAll(StaffRank.ALL_COSMETICS);
+            assertThat(StaffRank.CREATOR.seed().nodes()).anySatisfy(node -> {
+                assertThat(node.permission()).isEqualTo(StaffRank.GUILD_FOUND_FREE);
+                assertThat(node.context()).isEmpty();
+            });
+            for (StaffRank other : StaffRank.values()) {
+                if (other != StaffRank.CREATOR) {
+                    assertThat(other.nodes()).doesNotContain(StaffRank.GUILD_FOUND_FREE)
+                            .doesNotContainAnyElementsOf(StaffRank.ALL_COSMETICS);
+                }
+            }
+        }
+
+        @Test
         @DisplayName("builder, creator, dev and tester stand next to the ladder, not on it")
         void offTheLadder() {
             assertThat(StaffRank.departments())
