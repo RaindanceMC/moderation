@@ -48,6 +48,11 @@ public enum StaffRank {
     /** Every cosmetic, nothing bought: what is for sale, every weapon skin, the whole particle and sound library. */
     public static final List<String> ALL_COSMETICS = List.of("rainscosmetics.free", "rainscosmetics.skins",
             "rainscosmetics.skins.all", "rainscosmetics.library", "rainscosmetics.particle.coffee");
+    /**
+     * On a server where cosmetics are a Prime perk (Cosmetics' prime.only), the everyday ones — a coloured name,
+     * particles, teleport looks — for staff too. Nothing on a server where everybody has them anyway.
+     */
+    public static final String COSMETIC_PERKS = "rainscosmetics.perks";
     /** Claim administration — acting on somebody else's claim. Not an exemption from anything. */
     public static final String CLAIM_ADMIN = "rec.admin";
     /** Holding more claims than anybody else; the other claim exemptions are claims' own bypass toggle. */
@@ -82,7 +87,7 @@ public enum StaffRank {
     public static final String DEV_MODE = "rains.moderation.dev";
     /** What a rung holds off duty too; everything else of theirs needs {@code rains:powers=on}. */
     public static final Set<String> ALWAYS = java.util.stream.Stream.concat(
-            java.util.stream.Stream.of(ModerationPermission.STAFF_CHAT.node(), ADMIN_MODE), ALL_COSMETICS.stream())
+            java.util.stream.Stream.of(ModerationPermission.STAFF_CHAT.node(), ADMIN_MODE, COSMETIC_PERKS), ALL_COSMETICS.stream())
             .collect(java.util.stream.Collectors.toUnmodifiableSet());
     /**
      * The vanilla commands a builder works with in admin mode — blocks, structures, entities and items. Nothing
@@ -121,6 +126,7 @@ public enum StaffRank {
                 }
             }
             everything.add(ADMIN_MODE);
+            everything.add(COSMETIC_PERKS);
             if (weight >= MOD.weight) {
                 everything.add(CLAIM_ADMIN);
                 everything.add(WARP_STAFF);
@@ -152,6 +158,7 @@ public enum StaffRank {
             }
             return Set.copyOf(everything);
         }
+        everything.add(COSMETIC_PERKS);
         switch (this) {
             case BUILDER -> {
                 everything.add(ModerationPermission.STAFF_CHAT.node());

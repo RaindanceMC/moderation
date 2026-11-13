@@ -399,4 +399,16 @@ class StaffRankTest {
             assertThat(StaffRank.ADMIN.nodes()).contains(StaffRank.ADMIN_MODE_OTHERS);
         }
     }
+
+    @org.junit.jupiter.api.Test
+    @org.junit.jupiter.api.DisplayName("every staff rank keeps the cosmetics a Prime-only server gates, on duty or not")
+    void cosmeticPerks() {
+        for (StaffRank rank : StaffRank.values()) {
+            if (rank == StaffRank.OWNER) {
+                continue;
+            }
+            org.assertj.core.api.Assertions.assertThat(rank.nodes()).as(rank.name()).contains(StaffRank.COSMETIC_PERKS);
+        }
+        org.assertj.core.api.Assertions.assertThat(StaffRank.ALWAYS).contains(StaffRank.COSMETIC_PERKS);
+    }
 }
