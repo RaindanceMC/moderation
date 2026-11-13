@@ -71,7 +71,7 @@ import java.util.UUID;
  */
 public final class ModerationModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.26.0")
+    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.27.0")
             .describedAs("Bans, mutes, reports, staff notes and the screens for them — over "
                     + "RainsCore's punishments, which stay whether or not this is installed")
             .by("Raindancer118");
@@ -424,6 +424,22 @@ public final class ModerationModule implements FlexModule {
         de.raindancer.core.moderation.rules.RuleBreaches.Judge ruleJudge = services.ruleBreaches().judge(server.getConsoleSender());
         de.raindancer.core.moderation.rules.RuleBreaches.provide(ruleJudge);
         context.closeWith(() -> de.raindancer.core.moderation.rules.RuleBreaches.withdraw(ruleJudge));
+
+        // Bans from Discord (Hush's ban sync through RainsDiscordLink) are handed out here like the console's own.
+        try {
+            var externalBans = new de.raindancer.modules.moderation.service.ExternalBanService(
+                    services.punishmentService(), task -> {
+                        if (server.isPrimaryThread()) {
+                            task.run();
+                        } else {
+                            de.raindancer.core.platform.util.Scheduling.global(context.plugin(), task);
+                        }
+                    });
+            de.raindancer.core.moderation.punishment.ExternalBans.provide(externalBans);
+            context.closeWith(() -> de.raindancer.core.moderation.punishment.ExternalBans.withdraw(externalBans));
+        } catch (LinkageError olderCore) {
+            context.log().info("RainsCore is older than 2.96.0: bans from Discord are not taken until it is updated.");
+        }
 
         // Reports a machine files (the anti-cheat's movement hacks) land in the same queue as the x-ray ones.
         de.raindancer.core.moderation.reports.AutoReports.Sink autoReports = reportService::fileAutomatic;
