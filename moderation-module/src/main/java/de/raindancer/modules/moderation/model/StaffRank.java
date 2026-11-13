@@ -37,7 +37,7 @@ public enum StaffRank {
     BUILDER("Builder", 0, "yellow", Material.BRICKS,
             "Builds the hub, the maps and the event stages. Creative in the build world; creative, WorldEdit and the building commands anywhere in admin mode."),
     CREATOR("Creator", 0, "light_purple", Material.SPYGLASS,
-            "Makes videos and streams about the server. Founds a guild for free, has the Twitch cosmetics and the supporter pets. No Prime cosmetic."),
+            "Makes videos and streams about the server. Founds a guild for free and has the Twitch cosmetics and weapon skins. No Prime cosmetic."),
     DEV("Developer", 0, "dark_aqua", Material.COMMAND_BLOCK,
             "Works on the plugins: performance tools, maintenance mode, and every permission while /dev is on."),
     TESTER("Tester", 0, "gray", Material.TARGET,
@@ -45,10 +45,8 @@ public enum StaffRank {
 
     /** Founding a guild without its price or the hours played first. */
     public static final String GUILD_FOUND_FREE = "rainsguilds.found.free";
-    /** The Twitch-themed cosmetics (particles, name colour) that only creators have. Defined by RainsCosmetics. */
+    /** The Twitch-themed cosmetics and weapon skins that only creators have. Defined by RainsCosmetics. */
     public static final String CREATOR_COSMETICS = "rainscosmetics.creator";
-    /** The pets that are otherwise for coffee supporters. Defined by RainsPets. */
-    public static final String CREATOR_PETS = "rainspets.creator";
     /** Every cosmetic, nothing bought: what is for sale, every weapon skin, the whole particle and sound library. */
     public static final List<String> ALL_COSMETICS = List.of("rainscosmetics.free", "rainscosmetics.skins",
             "rainscosmetics.skins.all", "rainscosmetics.library", "rainscosmetics.particle.coffee");
@@ -186,7 +184,6 @@ public enum StaffRank {
             case CREATOR -> {
                 everything.add(GUILD_FOUND_FREE);
                 everything.add(CREATOR_COSMETICS);
-                everything.add(CREATOR_PETS);
             }
             case TESTER -> everything.add(ModerationPermission.STAFF_CHAT.node());
             default -> { }

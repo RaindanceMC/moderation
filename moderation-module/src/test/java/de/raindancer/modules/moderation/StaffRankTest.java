@@ -181,10 +181,10 @@ class StaffRankTest {
     class Departments {
 
         @Test
-        @DisplayName("a creator founds a guild for free and has the Twitch cosmetics and supporter pets, but no Prime cosmetic; nobody else founds for free")
+        @DisplayName("a creator founds a guild for free and has the Twitch cosmetics, but no Prime cosmetic and no supporter pets; nobody else founds for free")
         void creatorFoundsForFree() {
-            assertThat(StaffRank.CREATOR.nodes()).contains(StaffRank.GUILD_FOUND_FREE,
-                    StaffRank.CREATOR_COSMETICS, StaffRank.CREATOR_PETS);
+            assertThat(StaffRank.CREATOR.nodes()).contains(StaffRank.GUILD_FOUND_FREE, StaffRank.CREATOR_COSMETICS)
+                    .doesNotContain("rainspets.creator");
             assertThat(StaffRank.CREATOR.nodes()).doesNotContainAnyElementsOf(StaffRank.ALL_COSMETICS)
                     .doesNotContain(StaffRank.COSMETIC_PERKS);
             assertThat(StaffRank.CREATOR.seed().nodes()).anySatisfy(node -> {
@@ -194,7 +194,7 @@ class StaffRankTest {
             for (StaffRank other : StaffRank.values()) {
                 if (other != StaffRank.CREATOR) {
                     assertThat(other.nodes()).doesNotContain(StaffRank.GUILD_FOUND_FREE)
-                            .doesNotContain(StaffRank.CREATOR_COSMETICS, StaffRank.CREATOR_PETS);
+                            .doesNotContain(StaffRank.CREATOR_COSMETICS);
                 }
             }
         }
