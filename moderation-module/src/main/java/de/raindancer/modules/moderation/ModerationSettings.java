@@ -291,8 +291,9 @@ public record ModerationSettings(
         boolean auditEverything,
 
         @In("moderation/records") @Title("Keep records for") @Range(min = 0, max = 3650)
-        @Describe("Days. 0 keeps them for ever — a moderation record that expires is one an appeal "
-                + "cannot be answered from.")
+        @Describe("Days. Punishments that ended, closed reports and staff notes older than this are deleted — never a "
+                + "punishment still in force or an open report. They name real people, so under the GDPR they may only be "
+                + "kept while there is a reason. 0 keeps them for ever.")
         @Key("records.keep-days")
         int keepRecordsDays,
 
@@ -693,6 +694,23 @@ public record ModerationSettings(
                 xrayDetectionEnabled, xrayOres, xrayCooldownSeconds, openReportsOnJoin, notesShownOnJoin, staffChatPrefix,
                 vanishOnJoinForStaff, mayPromoteBelow, mayDemoteBelow, adminsAreOp,
                 flightWhileVanished, auditEverything, keepRecordsDays, autoSaveSeconds, debug, banhammer,
+                xrayHoneypots, xrayBaitVeins, xrayReportScore, xrayHalfLifeDays, warnFine, warnFinePercent, warnFineLeast, warnFineMost, modFineMax, unpaidFinesBecomeDebt,
+                victimSharePercent, muteBuyoffPerHour, muteBuyoffLongestHours, attemptAlerts, attemptAlertMinutes,
+                cheatEnabled, cheatPacketTap, cheatMinTps, cheatAlerts, cheatAutoKick, cheatAutoBan, cheatBanLength, cheatPunishByRules, cheatCheatingRule, cheatPunishScale, cheatEvidence, cheatEvidencePerPlayer, cheatDisabledChecks, cheatSilentChecks, cheatExperimentalChecks, cheatBlockedBrands, cheatBlockedChannels, cheatKickBlockedClients, cheatAnnounceBrands, cheatAntiEsp, cheatAntiEspRange, cheatAutoReport, cheatAutoReportFlags, cheatAutoReportSeconds, cheatAutoReportLevel, cheatAutoReportMaxPing);
+    }
+
+    public ModerationSettings withRecordsKeptDays(int days) {
+        return new ModerationSettings(announceToEveryone, announceLifts, announceKicks, announceWarnings,
+                showModeratorName, appealMessage, defaultBanLength, defaultMuteLength,
+                defaultFreezeLength, useEscalation, warnsBeforeBan, warnWindowDays,
+                warnBanLength, modTempBanMax, kickOnBan, mirrorToVanillaBanList,
+                importVanillaBans, reportsEnabled, reportCooldownSeconds,
+                mostOpenReportsPerPlayer, shortestReport, tellReporterWhenClosed,
+                notifyStaffOnReport, suspiciousCommandsEnabled, suspiciousCommands,
+                suspiciousCooldownSeconds,
+                xrayDetectionEnabled, xrayOres, xrayCooldownSeconds, openReportsOnJoin, notesShownOnJoin, staffChatPrefix,
+                vanishOnJoinForStaff, mayPromoteBelow, mayDemoteBelow, adminsAreOp,
+                flightWhileVanished, auditEverything, days, autoSaveSeconds, debug, banhammer,
                 xrayHoneypots, xrayBaitVeins, xrayReportScore, xrayHalfLifeDays, warnFine, warnFinePercent, warnFineLeast, warnFineMost, modFineMax, unpaidFinesBecomeDebt,
                 victimSharePercent, muteBuyoffPerHour, muteBuyoffLongestHours, attemptAlerts, attemptAlertMinutes,
                 cheatEnabled, cheatPacketTap, cheatMinTps, cheatAlerts, cheatAutoKick, cheatAutoBan, cheatBanLength, cheatPunishByRules, cheatCheatingRule, cheatPunishScale, cheatEvidence, cheatEvidencePerPlayer, cheatDisabledChecks, cheatSilentChecks, cheatExperimentalChecks, cheatBlockedBrands, cheatBlockedChannels, cheatKickBlockedClients, cheatAnnounceBrands, cheatAntiEsp, cheatAntiEspRange, cheatAutoReport, cheatAutoReportFlags, cheatAutoReportSeconds, cheatAutoReportLevel, cheatAutoReportMaxPing);

@@ -99,10 +99,16 @@ public final class ReportStorage {
         }
     }
 
+    /** A report past the retention; removed from the database with the next {@link #flush()}. */
+    public synchronized void drop(String id) {
+        registry.remove(id);
+        dirty.mark(id);
+    }
+
     /** Writes what this server changed. @return whether it reached the database */
     public synchronized boolean flush() {
         return dirty.write(store, (yaml, id) -> {
-            registry.byId(id).ifPresent(report -> write(yaml, report));
+            registry.byId(id).ifPresentOrElse(report -> write(yaml, report), () -> yaml.set("reports." + id, null));
             yaml.set("version", DATA_VERSION);
         });
     }

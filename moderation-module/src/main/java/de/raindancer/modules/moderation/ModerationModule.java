@@ -71,7 +71,7 @@ import java.util.UUID;
  */
 public final class ModerationModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.27.0")
+    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.28.0")
             .describedAs("Bans, mutes, reports, staff notes and the screens for them — over "
                     + "RainsCore's punishments, which stay whether or not this is installed")
             .by("Raindancer118");
@@ -82,6 +82,7 @@ public final class ModerationModule implements FlexModule {
     private Reasons reasons;
     private ReportRegistry reports;
     private NoteRegistry notes;
+    private volatile de.raindancer.modules.moderation.service.RecordRetention recordRetention;
     private ReportStorage reportStorage;
     private NoteStorage noteStorage;
     private ImmuneStaff immune;
@@ -463,6 +464,7 @@ public final class ModerationModule implements FlexModule {
             densitySampler.settings(fresh);
             xrayEvidence.settings(fresh);
             noteService.settings(fresh);
+            recordRetention.settings(fresh);
             staffChat.settings(fresh);
             staffService.settings(fresh);
             worldTools.settings(fresh);
@@ -514,6 +516,23 @@ public final class ModerationModule implements FlexModule {
             });
             context.closeWith(writing::cancel);
         }
+
+        // records.keep-days: a first sweep two minutes after start, then every six hours.
+        de.raindancer.modules.moderation.service.RecordRetention retention = recordRetention =
+                new de.raindancer.modules.moderation.service.RecordRetention(
+                        settings.current(), java.time.Instant::now,
+                        cutoff -> context.core().punishments().forgetEndedBefore(cutoff),
+                        reports::all, reportStorage::drop, notes::snapshot, noteStorage::drop);
+        var sweeping = Scheduling.asyncTimer(context.plugin(), 120, 6 * 3600, task -> {
+            de.raindancer.modules.moderation.service.RecordRetention.Swept swept = retention.sweep();
+            if (swept.any()) {
+                reportService.flush();
+                noteService.flush();
+                log.info("Records past records.keep-days dropped: {} punishment(s), {} closed report(s), {} note(s).",
+                        swept.punishments(), swept.reports(), swept.notes());
+            }
+        });
+        context.closeWith(sweeping::cancel);
 
         // The commands were registered during bootstrap, long before any of this existed, and have
         // been answering "not started yet" until now. See ModerationCommands.

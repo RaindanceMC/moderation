@@ -134,6 +134,25 @@ class ReportsNetworkTest {
     }
 
     @Test
+    @DisplayName("a dropped report is gone from the document and from the other server")
+    void droppedEverywhere() {
+        Side smp = reports("smp");
+        Side arena = reports("arena");
+        Report one = file(smp, "one");
+        Report two = file(smp, "two");
+        servers.settle();
+
+        smp.storage().drop(one.id());
+        smp.storage().flush();
+        servers.settle();
+        servers.settle();
+
+        assertThat(arena.registry().byId(one.id())).isEmpty();
+        assertThat(arena.registry().byId(two.id())).isPresent();
+        assertThat(reports("survival").registry().byId(one.id())).isEmpty();
+    }
+
+    @Test
     @DisplayName("a note written on one server is on the other, a removed one is gone there")
     void notesAreTheNetworks() {
         NoteSide smp = notes("smp");
