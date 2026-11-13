@@ -181,17 +181,20 @@ class StaffRankTest {
     class Departments {
 
         @Test
-        @DisplayName("a creator founds a guild for free and has every cosmetic; nobody else founds for free")
+        @DisplayName("a creator founds a guild for free and has the Twitch cosmetics and supporter pets, but no Prime cosmetic; nobody else founds for free")
         void creatorFoundsForFree() {
-            assertThat(StaffRank.CREATOR.nodes()).contains(StaffRank.GUILD_FOUND_FREE)
-                    .containsAll(StaffRank.ALL_COSMETICS);
+            assertThat(StaffRank.CREATOR.nodes()).contains(StaffRank.GUILD_FOUND_FREE,
+                    StaffRank.CREATOR_COSMETICS, StaffRank.CREATOR_PETS);
+            assertThat(StaffRank.CREATOR.nodes()).doesNotContainAnyElementsOf(StaffRank.ALL_COSMETICS)
+                    .doesNotContain(StaffRank.COSMETIC_PERKS);
             assertThat(StaffRank.CREATOR.seed().nodes()).anySatisfy(node -> {
                 assertThat(node.permission()).isEqualTo(StaffRank.GUILD_FOUND_FREE);
                 assertThat(node.context()).isEmpty();
             });
             for (StaffRank other : StaffRank.values()) {
                 if (other != StaffRank.CREATOR) {
-                    assertThat(other.nodes()).doesNotContain(StaffRank.GUILD_FOUND_FREE);
+                    assertThat(other.nodes()).doesNotContain(StaffRank.GUILD_FOUND_FREE)
+                            .doesNotContain(StaffRank.CREATOR_COSMETICS, StaffRank.CREATOR_PETS);
                 }
             }
         }
@@ -401,10 +404,14 @@ class StaffRankTest {
     }
 
     @org.junit.jupiter.api.Test
-    @org.junit.jupiter.api.DisplayName("every staff rank keeps the cosmetics a Prime-only server gates, on duty or not")
+    @org.junit.jupiter.api.DisplayName("every staff rank but the creator keeps the cosmetics a Prime-only server gates, on duty or not")
     void cosmeticPerks() {
         for (StaffRank rank : StaffRank.values()) {
             if (rank == StaffRank.OWNER) {
+                continue;
+            }
+            if (rank == StaffRank.CREATOR) {
+                org.assertj.core.api.Assertions.assertThat(rank.nodes()).as(rank.name()).doesNotContain(StaffRank.COSMETIC_PERKS);
                 continue;
             }
             org.assertj.core.api.Assertions.assertThat(rank.nodes()).as(rank.name()).contains(StaffRank.COSMETIC_PERKS);

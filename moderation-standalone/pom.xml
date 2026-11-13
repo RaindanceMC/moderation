@@ -176,7 +176,7 @@
         <!-- 3.9.0: /ac reset wipes the x-ray mining ledger too; /ac fresh measures x-ray afresh, finds kept as history. -->
         <!-- 3.19.0: the moderation screens for a decision are the game's own dialogs, like /help (RainsCore 2.68 ui.dialog). -->
         <!-- 3.20.0: what moderation does here — anti-cheat alerts, reports players file — is told to RainsCore 2.71 ModerationFeed, for the Hush feed in Discord Link. -->
-        <plugin.version>3.23.0</plugin.version>
+        <plugin.version>3.24.0</plugin.version>
     </properties>
 
     <dependencies>
