@@ -64,7 +64,7 @@ public final class AuditMenu extends ModerationList<AuditEntry> {
     protected Component title() {
         return MINI.deserialize(subject == null
                 ? "<dark_gray>Audit journal"
-                : "<dark_gray>Audit — <white>" + subjectName);
+                : "<dark_gray>Audit: <white>" + subjectName);
     }
 
     @Override
@@ -155,7 +155,7 @@ public final class AuditMenu extends ModerationList<AuditEntry> {
     protected List<String> helpLines() {
         return subject == null
                 ? List.of("<gray>Every join, teleport, gamemode change and moderation action,",
-                        "<gray>newest first — everything Core's journal has kept.")
+                        "<gray>newest first, everything Core's journal has kept.")
                 : List.of("<gray>What " + subjectName + " has done, and what has been done to them.");
     }
 

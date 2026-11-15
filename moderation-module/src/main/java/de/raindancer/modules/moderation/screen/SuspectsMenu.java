@@ -35,7 +35,7 @@ public final class SuspectsMenu extends PaginatedMenu<PlayerTrack> implements IM
 
     @Override
     protected Component title() {
-        return MiniMessage.miniMessage().deserialize("<dark_gray>Anti-cheat — <white>suspects</white>");
+        return MiniMessage.miniMessage().deserialize("<dark_gray>Anti-cheat: <white>suspects</white>");
     }
 
     @Override

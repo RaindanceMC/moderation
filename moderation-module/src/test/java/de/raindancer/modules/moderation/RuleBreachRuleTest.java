@@ -40,7 +40,7 @@ class RuleBreachRuleTest {
     void reason() {
         assertThat(rule.breach(griefing, 0, "").orElseThrow().reason()).isEqualTo("Broke rule 2: No griefing");
         assertThat(rule.breach(griefing, 0, " tore down Bo's house ").orElseThrow().reason())
-                .isEqualTo("Broke rule 2: No griefing — tore down Bo's house");
+                .isEqualTo("Broke rule 2: No griefing (tore down Bo's house)");
     }
 
     @Test

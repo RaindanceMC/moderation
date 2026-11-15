@@ -97,7 +97,7 @@ public final class PunishCommand extends StaffCommand {
             // disagrees knows to type a length rather than discovering it afterwards.
             sentence = moderation.punishmentService().suggest(preset.get(), them.getUniqueId());
             reason = preset.get().label()
-                    + (args.length > 2 ? " — " + reasonFrom(args, 2) : "");
+                    + (args.length > 2 ? ": " + reasonFrom(args, 2) : "");
         } else {
             sentence = defaultLength(moderation);
             reason = reasonFrom(args, 1);

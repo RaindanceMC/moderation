@@ -49,7 +49,7 @@ public final class RankMenu extends ModerationScreen {
 
     @Override
     protected Component title() {
-        return MINI.deserialize("<dark_gray>Rank — <white>" + subjectName);
+        return MINI.deserialize("<dark_gray>Rank: <white>" + subjectName);
     }
 
     @Override
@@ -151,7 +151,7 @@ public final class RankMenu extends ModerationScreen {
         List<String> what = new ArrayList<>();
         what.add("<gray>" + rank.describe());
         if (down) {
-            what.add("<yellow>This is a step down from " + current.get().title() + " — they lose what it had.");
+            what.add("<yellow>This is a step down from " + current.get().title() + ". They lose what it had.");
         }
         if (rank == StaffRank.ADMIN) {
             what.add("<red>An admin can change the settings and cannot be acted on by moderators.");

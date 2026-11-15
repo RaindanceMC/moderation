@@ -120,7 +120,7 @@ class LogQueryTest {
     @DisplayName("described for a header in Berlin time")
     void described() {
         assertThat(parse("player:Bo from:2026-10-10 17:30 to:2026-10-10 18:00 \"near spawn\" rules").describe(BERLIN))
-                .isEqualTo("player Bo · 2026-10-10 17:30 – 2026-10-10 18:00 · \"rules\" \"near spawn\"");
+                .isEqualTo("player Bo · 2026-10-10 17:30 to 2026-10-10 18:00 · \"rules\" \"near spawn\"");
         assertThat(parse("").describe(BERLIN)).isEqualTo("everything");
     }
 }

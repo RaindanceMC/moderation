@@ -53,8 +53,8 @@ public final class DurationDialog extends ModerationDialog {
         DialogPage page = titled(subjectName, CategoryDialog.verb(reason.kind()), name()).columns(2)
                 .text("<white>" + CategoryDialog.verb(reason.kind()) + " <bold>" + literal(subjectName)
                         + "</bold> for <" + reason.severity().colour() + ">" + literal(reason.label())
-                        + "</" + reason.severity().colour() + "> — how long?")
-                .field(TYPED, "<white>…or type a length <dark_gray>(90m, 3d, 2M — m minutes, M months)", "", 24);
+                        + "</" + reason.severity().colour() + ">: how long?")
+                .field(TYPED, "<white>…or type a length <dark_gray>(90m, 3d, 2M; m is minutes, M is months)", "", 24);
         Verdict suggestedAllowed = allowedFor(suggested);
         page.button(suggestedAllowed.isAllowed(), "<green>★ " + suggested.describe(),
                 "<gray>What this server's ladder says.\n<dark_gray>Their "
@@ -106,7 +106,7 @@ public final class DurationDialog extends ModerationDialog {
 
     private void confirm(Sentence sentence) {
         new ConfirmScreen(services(), viewer, (Runnable) this::open,
-                "<yellow>" + literal(reason.label()) + " — " + sentence.describe() + "?",
+                "<yellow>" + literal(reason.label()) + ": " + sentence.describe() + "?",
                 List.of("<gray>" + literal(subjectName) + " would be " + reason.kind().past()
                                 + " <white>" + sentence.describe() + "</white>.",
                         "<gray>Reason: <white>" + literal(reason.label()) + "</white>."),

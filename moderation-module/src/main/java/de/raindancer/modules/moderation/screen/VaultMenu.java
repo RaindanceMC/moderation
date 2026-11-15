@@ -141,7 +141,7 @@ public final class VaultMenu extends ModerationScreen {
 
     private static ItemStack stand(Stash vault, ArmourPiece piece) {
         return vault.armour(piece).orElseGet(() -> Icons.of(Material.LIGHT_GRAY_STAINED_GLASS_PANE,
-                "<gray>" + piece.label() + " stand <dark_gray>— empty",
+                "<gray>" + piece.label() + " stand <dark_gray>(empty)",
                 "<dark_gray>Click with a " + piece.label().toLowerCase() + " on the cursor,",
                 "<dark_gray>or shift-click one in from below."));
     }

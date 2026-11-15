@@ -74,7 +74,7 @@ public final class PlayerPunishDialog extends PlayerRoomDialog {
     private void permanentBan(DialogPage page) {
         boolean allowed = may(ModerationPermission.BAN);
         page.button(allowed, "<red>Ban for ever", "<gray>Gone for good, straight away. Asks first.",
-                "A permanent ban is an admin's decision — you can ban for up to "
+                "A permanent ban is an admin's decision. You can ban for up to "
                         + services().banLimitRule().capDescribed(),
                 answers -> new ConfirmScreen(services(), viewer, (Runnable) this::open,
                         "<red>Ban " + literal(subjectName) + " for ever?",

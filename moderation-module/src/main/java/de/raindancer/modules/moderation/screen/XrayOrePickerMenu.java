@@ -83,7 +83,7 @@ public final class XrayOrePickerMenu extends ModerationList<Material> {
     protected ItemStack icon(Material ore) {
         boolean watched = currentlyWatched().contains(ore.name());
         List<String> lore = new ArrayList<>();
-        lore.add(watched ? "<green>Watched — counts towards the ratio and the review screen."
+        lore.add(watched ? "<green>Watched: counts towards the ratio and the review screen."
                 : "<dark_gray>Not watched.");
         lore.add("");
         lore.add(may(ModerationPermission.CONFIG)

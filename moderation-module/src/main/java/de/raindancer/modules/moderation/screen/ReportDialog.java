@@ -124,9 +124,9 @@ public final class ReportDialog extends ModerationDialog {
                                 + ".\n<dark_gray>Close the report afterwards.", "For whoever may read reports",
                         answers -> new PlayerPunishDialog(services(), viewer, this::open, report.subject(),
                                 report.subjectName()).open())
-                .button(allowed, "<green>✔ Dealt with", "<gray>Something was done about it — say what in the box.",
+                .button(allowed, "<green>✔ Dealt with", "<gray>Something was done about it. Say what in the box.",
                         "For whoever may read reports", answers -> close(answers, true))
-                .button(allowed, "<gray>✘ Nothing in it", "<gray>Looked at, nothing to do — say why in the box.",
+                .button(allowed, "<gray>✘ Nothing in it", "<gray>Looked at, nothing to do. Say why in the box.",
                         "For whoever may read reports", answers -> close(answers, false));
         return page;
     }
@@ -210,8 +210,8 @@ public final class ReportDialog extends ModerationDialog {
         }
         String typed = answers.text(OUTCOME);
         if (typed.isEmpty()) {
-            page().withNotice(dealtWith ? "Say in the box what you did — they are told."
-                    : "Say in the box why there is nothing to do — they are told.").show(viewer);
+            page().withNotice(dealtWith ? "Say in the box what you did. They are told."
+                    : "Say in the box why there is nothing to do. They are told.").show(viewer);
             return;
         }
         boolean closed = dealtWith

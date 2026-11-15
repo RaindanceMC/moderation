@@ -67,7 +67,7 @@ public final class ModerationCommands {
                 // tempban and an admin holds both, so both reach the command, and BanLimitRule is what
                 // decides how long each of them may ban for. Guarded by BAN instead, a mod would be
                 // refused at the door and could not hand out the day they are trusted with.
-                ModuleCommand.of("ban", "Bans somebody — mods for a limited time, admins for any",
+                ModuleCommand.of("ban", "Bans somebody. Mods for a limited time, admins for any",
                                 new PunishCommand(ModerationCommands::require, PunishmentKind.BAN,
                                         ModerationPermission.TEMPBAN))
                         .aliased("tempban"),
@@ -75,14 +75,14 @@ public final class ModerationCommands {
                                 new LiftCommand(ModerationCommands::require, PunishmentKind.BAN,
                                         ModerationPermission.TEMPBAN))
                         .aliased("pardon")
-                        .taking("<player> — lift their ban")
+                        .taking("<player>: lift their ban")
                         .needing(ModerationPermission.TEMPBAN.node()),
 
                 ModuleCommand.of("mute", "Stops somebody talking",
                                 new PunishCommand(ModerationCommands::require, PunishmentKind.MUTE,
                                         ModerationPermission.MUTE))
                         .aliased("tempmute")
-                        .taking("<player> [length] [reason] — 90m, 3d, perm")
+                        .taking("<player> [length] [reason]: 90m, 3d, perm")
                         .needing(ModerationPermission.MUTE.node()),
                 ModuleCommand.of("unmute", "Lets them talk again",
                                 new LiftCommand(ModerationCommands::require, PunishmentKind.MUTE,
@@ -108,7 +108,7 @@ public final class ModerationCommands {
                 ModuleCommand.of("broke", "Punishes somebody for breaking one of the server's rules, as the rule says",
                                 new de.raindancer.modules.moderation.command.BrokeCommand(ModerationCommands::require))
                         .aliased("rulebreak")
-                        .taking("<player> — pick the rule", "<player> <rule number> [what happened]")
+                        .taking("<player>: pick the rule", "<player> <rule number> [what happened]")
                         .needing(ModerationPermission.WARN.node()),
                 ModuleCommand.of("fine", "Fines somebody, or forgives or revokes what they were fined",
                                 new de.raindancer.modules.moderation.command.FineCommand(ModerationCommands::require))
@@ -116,11 +116,11 @@ public final class ModerationCommands {
                         .needing(ModerationPermission.FINE.node()),
                 ModuleCommand.of("debt", "What you owe from fines, and paying it",
                                 new de.raindancer.modules.moderation.command.DebtCommand(ModerationCommands::require))
-                        .taking("— what you owe", "pay [amount|all]")
+                        .taking("(nothing): what you owe", "pay [amount|all]")
                         .needing(de.raindancer.modules.moderation.command.DebtCommand.USE),
                 ModuleCommand.of("buyoff", "Ends your temporary mute early, for a price",
                                 new de.raindancer.modules.moderation.command.BuyoffCommand(ModerationCommands::require))
-                        .taking("— the price", "confirm — pay it")
+                        .taking("(nothing): the price", "confirm: pay it")
                         .needing(de.raindancer.modules.moderation.command.BuyoffCommand.USE),
                 ModuleCommand.of("warn", "Puts a warning on somebody's record",
                                 new WarnCommand(ModerationCommands::require))
@@ -135,11 +135,11 @@ public final class ModerationCommands {
                         .aliased("blockedattempts")
                         .taking("[player:<name>] [type:join|chat|command|build] [from:<time>] [to:<time>] "
                                         + "[day:<day>] [last:<2h>] [words] [page:<n>]",
-                                "alerts on|off — whether you are told when somebody tries")
+                                "alerts on|off: whether you are told when somebody tries")
                         .needing(ModerationPermission.ATTEMPTS.node()),
-                ModuleCommand.of("audit", "The audit journal — joins, teleports, gamemode, moderation",
+                ModuleCommand.of("audit", "The audit journal: joins, teleports, gamemode, moderation",
                                 new AuditCommand(ModerationCommands::require))
-                        .taking("[player] [feature] — nothing shows the newest across the server")
+                        .taking("[player] [feature]: nothing shows the newest across the server")
                         .needing(ModerationPermission.HISTORY.node()),
 
                 // Audited from here down: none of these leaves a trace anywhere else. A ban or a mute
@@ -148,7 +148,7 @@ public final class ModerationCommands {
                 // asks about after the fact.
                 ModuleCommand.of("vanish", "Makes you invisible to players",
                                 new VanishCommand(ModerationCommands::require))
-                        .taking("[player] — somebody else, if you may")
+                        .taking("[player]: somebody else, if you may")
                         .needing(ModerationPermission.VANISH.node())
                         .auditUsage(),
                 ModuleCommand.of("dev", "Switches dev mode: every permission while it is on",
@@ -161,7 +161,7 @@ public final class ModerationCommands {
                                 new de.raindancer.modules.moderation.command.ChatLogCommand(ModerationCommands::require))
                         .aliased("chatsearch")
                         .taking("[player:<name>] [from:<time>] [to:<time>] [day:<day>] [last:<2h>] [words] "
-                                + "[\"a phrase\"] [page:<n>] — times in Berlin time, e.g. from:2026-10-10 17:30")
+                                + "[\"a phrase\"] [page:<n>]: times in Berlin time, e.g. from:2026-10-10 17:30")
                         .needing(ModerationPermission.CHATLOG.node())
                         .auditUsage(),
                 ModuleCommand.of("invsee", "Opens somebody's inventory, online or not",
@@ -175,25 +175,25 @@ public final class ModerationCommands {
                         .taking("<player> <what happened>"),
                 ModuleCommand.of("reports", "The report queue",
                                 new ReportsCommand(ModerationCommands::require))
-                        .taking("list — everything open", "<id> — one of them")
+                        .taking("list: everything open", "<id>: one of them")
                         .needing(ModerationPermission.REPORTS.node()),
                 ModuleCommand.of("staffchat", "Talks to the staff rather than the server",
                                 new StaffChatCommand(ModerationCommands::require))
-                        .taking("[message] — or nothing, to stay in it")
+                        .taking("[message]: or nothing, to stay in it")
                         .needing(ModerationPermission.STAFF_CHAT.node()),
 
                 // Typed, for the times somebody knows what they want: /orevein diamond_ore 40 is one
                 // line for four clicks and two screens, and an event is run twenty times over.
                 ModuleCommand.of("orevein", "Bury a vein of ore where you are looking",
                                 new WorldToolCommands.Vein(ModerationCommands::require))
-                        .taking("[ore] [size] — iron_ore 12 by default")
+                        .taking("[ore] [size]: iron_ore 12 by default")
                         .needing(ModerationPermission.SPAWN_ORE.node())
                         .auditUsage(),
                 ModuleCommand.of("mob", "Call up a pack or a wave where you are looking",
                                 new WorldToolCommands.Mob(ModerationCommands::require))
                         .taking("pack <creature> [how many]",
                                 "wave <creature> [how many] [packs] [seconds]",
-                                "stop — ends your wave")
+                                "stop: ends your wave")
                         .needing(ModerationPermission.SPAWN_MOBS.node())
                         .auditUsage(),
 
@@ -210,11 +210,11 @@ public final class ModerationCommands {
                 // Given a node nobody is ever granted, purely so the directory does not advertise a
                 // console command to every player reading the book. See ProtectCommand: the command
                 // itself refuses anybody who is not the console, node or no node.
-                ModuleCommand.of("protect", "Protects an account from moderators — console only",
+                ModuleCommand.of("protect", "Protects an account from moderators, console only",
                                 new ProtectCommand(ModerationCommands::require, true))
                         .taking("<player>")
                         .needing("rainsmoderation.console-only"),
-                ModuleCommand.of("unprotect", "Takes that protection off again — console only",
+                ModuleCommand.of("unprotect", "Takes that protection off again, console only",
                                 new ProtectCommand(ModerationCommands::require, false))
                         .taking("<player>")
                         .needing("rainsmoderation.console-only"),
@@ -243,7 +243,7 @@ public final class ModerationCommands {
                                 new SelfToolCommand(ModerationCommands::require,
                                         SelfToolCommand.Tool.GOD, null))
                         .aliased("godmode")
-                        .taking("[player] — yourself if you name nobody")
+                        .taking("[player]: yourself if you name nobody")
                         .needing(ModerationPermission.GOD.node())
                         .auditUsage(),
                 ModuleCommand.of("ungod", "Makes them mortal again",

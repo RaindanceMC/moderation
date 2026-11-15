@@ -90,12 +90,12 @@ public final class WhoToReportMenu extends ModerationList<Player> {
     @Override
     protected List<String> helpLines() {
         return List.of("<gray>Pick who, then what for, then say what happened.",
-                "<gray>A report goes to the staff — it is not a punishment by itself.",
+                "<gray>A report goes to the staff. It is not a punishment by itself.",
                 "<gray>For somebody who has logged off, type <white>/report <name> …</white>");
     }
 
     @Override
     public String describe() {
-        return "who a player is reporting — everybody online but themselves";
+        return "who a player is reporting: everybody online but themselves";
     }
 }

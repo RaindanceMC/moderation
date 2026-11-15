@@ -130,6 +130,6 @@ public final class PlayerPickerMenu extends ModerationList<PlayerEntry> {
 
     @Override
     public String describe() {
-        return "everybody the server has seen, online first — for picking somebody who is not here";
+        return "everybody the server has seen, online first, for picking somebody who is not here";
     }
 }

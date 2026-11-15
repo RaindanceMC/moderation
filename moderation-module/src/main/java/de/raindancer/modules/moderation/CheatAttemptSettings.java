@@ -17,7 +17,7 @@ import java.util.List;
 public record CheatAttemptSettings(
 
         @In("moderation/anticheat/attempts") @Title("Punish cheat attempts")
-        @Describe("Anybody typing one of the commands below is punished, by the ladder below — staff too. Only the "
+        @Describe("Anybody typing one of the commands below is punished by the ladder below, staff too. Only the "
                 + "server's owners never are: the owner rank and its operators.")
         @Key("attempts.enabled")
         boolean enabled,

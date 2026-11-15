@@ -47,7 +47,7 @@ public record AntiCheatSettings(
 
         @In("anticheat/actions") @Title("Tell staff")
         @Describe("Staff with rainsanticheat.alerts on every server of the network are told when Grim flags a "
-                + "player past a family's alert level, at most once a second per family — repeats are counted "
+                + "player past a family's alert level, at most once a second per family. Repeats are counted "
                 + "into the next line.")
         @Key("alerts")
         boolean alerts,
@@ -141,7 +141,7 @@ public record AntiCheatSettings(
         boolean announceBrands,
 
         @In("anticheat") @Title("Hide players behind walls")
-        @Describe("Anti-ESP: a player nobody could see — solid blocks in every line between them — is not sent "
+        @Describe("Anti-ESP: a player nobody could see (solid blocks in every line between them) is not sent "
                 + "to the other's client at all, so wallhacks and tracers have nothing to draw. They stay in the "
                 + "tab list. Costs a few ray traces per pair of nearby players, five times a second. Not on Folia.")
         @Key("anti-esp")
@@ -155,7 +155,7 @@ public record AntiCheatSettings(
         // ─────────────────────────────────────────────────────────── reports
 
         @In("anticheat/reports") @Title("Report cheaters")
-        @Describe("When Grim keeps flagging a player over a stretch of time — not a burst, a pattern — one "
+        @Describe("When Grim keeps flagging a player over a stretch of time, one "
                 + "report goes into the moderation queue, from 'the console', with what was seen and a link to "
                 + "the evidence. It never punishes: staff decide. Not filed again while an open one about the "
                 + "same player and kind waits.")

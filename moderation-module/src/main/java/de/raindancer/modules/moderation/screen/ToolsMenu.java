@@ -44,7 +44,7 @@ public final class ToolsMenu extends ModerationScreen {
 
     @Override
     protected Component title() {
-        return MINI.deserialize("<dark_gray>Tools — <white>" + subjectName);
+        return MINI.deserialize("<dark_gray>Tools: <white>" + subjectName);
     }
 
     @Override
@@ -68,7 +68,7 @@ public final class ToolsMenu extends ModerationScreen {
         // ── flight ────────────────────────────────────────────────────────────────────────────
         boolean flying = here && them.getAllowFlight();
         tool(2, ModerationPermission.FLY, Material.FEATHER, "Flight", flying, here,
-                "<gray>The game remembers this one — it survives a restart.",
+                "<gray>The game remembers this one. It survives a restart.",
                 () -> {
                     services().players().flight(subject, !flying);
                     services().staff().recordSelfTool(viewer, subject, subjectName,
@@ -158,7 +158,7 @@ public final class ToolsMenu extends ModerationScreen {
                     }
                     if (vital.harmful()) {
                         new ConfirmScreen(services(), viewer, this,
-                                "<red>" + label(vital) + " — " + subjectName + "?",
+                                "<red>" + label(vital) + ": " + subjectName + "?",
                                 List.of("<gray>" + vital.describe() + ".",
                                         "<dark_gray>Nothing about this goes on their record."),
                                 () -> doVital(vital)).open();
@@ -234,7 +234,7 @@ public final class ToolsMenu extends ModerationScreen {
 
     @Override
     protected List<String> helpLines() {
-        return List.of("<gray>These are working tools, not punishments — nothing here goes on a record.",
+        return List.of("<gray>These are working tools, not punishments. Nothing here goes on a record.",
                 "<gray>Invulnerability and one-hit-kill end when the player logs out.",
                 "<gray>Every switch is written to the audit trail, including on yourself.");
     }

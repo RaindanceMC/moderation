@@ -47,7 +47,7 @@ public final class LegacyStaffImport {
                 }
                 Optional<StaffRank> rank = StaffRank.byName(staff.getString(id));
                 if (rank.isEmpty()) {
-                    log.warn("staff.yml: {} held '{}', which is no staff rank any more — not moved.",
+                    log.warn("staff.yml: {} held '{}', which is no staff rank any more, so it was not moved.",
                             id, staff.getString(id));
                     continue;
                 }

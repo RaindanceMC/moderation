@@ -90,7 +90,7 @@ public final class WorldToolsMenu extends ModerationScreen {
         band(MenuLayout.RULES, 1, mayOre && aimed != null,
                 Icons.of(oreIcon(), "<yellow>Bury a vein of " + words(ore),
                         "<gray>" + veinSize + " blocks, in the ground you are looking at.",
-                        "<gray>Only natural stone is replaced — never anything built.",
+                        "<gray>Only natural stone is replaced, never anything built.",
                         "",
                         "<dark_gray>Left click to bury it.",
                         "<dark_gray>Right click to change the ore."),
@@ -187,7 +187,7 @@ public final class WorldToolsMenu extends ModerationScreen {
             band(MenuLayout.LAND, 3, mayMobs && aimed != null,
                     Icons.of(Material.BELL, "<yellow>Start a wave",
                             "<gray>" + packs + " pack(s) of " + packSize + " × " + words(creature) + ",",
-                            "<gray>" + everySeconds + " seconds apart — "
+                            "<gray>" + everySeconds + " seconds apart, "
                                     + (packs * packSize) + " in total.",
                             "",
                             "<dark_gray>Left click to start it.",
@@ -305,8 +305,8 @@ public final class WorldToolsMenu extends ModerationScreen {
     private String readable(Location at) {
         String material = at.getBlock().getType().name();
         return Veins.isNatural(material)
-                ? words(material) + " — a vein would take"
-                : words(material) + " — a vein would not touch this";
+                ? words(material) + ": a vein would take"
+                : words(material) + ": a vein would not touch this";
     }
 
     /**

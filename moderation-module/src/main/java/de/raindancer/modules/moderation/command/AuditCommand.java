@@ -57,7 +57,7 @@ public final class AuditCommand extends StaffCommand {
 
     @Override
     public String describe() {
-        return "the audit journal — joins, teleports, gamemode changes, moderation actions";
+        return "the audit journal: joins, teleports, gamemode changes, moderation actions";
     }
 
     @Override

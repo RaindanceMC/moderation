@@ -59,7 +59,7 @@ public final class ReportsCommand extends StaffCommand {
         Instant now = Instant.now();
         for (Report report : live.subList(0, Math.min(MOST_LINES, live.size()))) {
             moderation.chat().row(sender,
-                    "<dark_gray><id></dark_gray> <white><subject></white> <gray>— <text> "
+                    "<dark_gray><id></dark_gray> <white><subject></white><gray>: <text> "
                             + "<dark_gray>(<when>, <state>)",
                     Chat.arg("id", report.id()),
                     Chat.arg("subject", report.subjectName()),

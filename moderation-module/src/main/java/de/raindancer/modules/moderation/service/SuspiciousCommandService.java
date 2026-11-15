@@ -71,7 +71,7 @@ public final class SuspiciousCommandService implements IModerationService {
         // reporter = null: filed by the check itself rather than by another player. ReportRule reads
         // that as the console and skips the limits meant for a player flooding the queue by hand.
         reports.file(null, null, player, playerName,
-                "typed /" + matched.get() + " — flagged automatically as a suspicious command");
+                "typed /" + matched.get() + ", flagged automatically as a suspicious command");
     }
 
     /** Lets go of a player's wait. Called when they leave. */

@@ -18,7 +18,7 @@ public final class AntiCheatCommands {
         return List.of(ModuleCommand.of("anticheat", "Looks players up in what Grim flagged, across the network",
                         new AntiCheatCommand(AntiCheatCommands::require))
                 .aliased("ac", "rac")
-                .taking("(nothing) — the suspects screen", "alerts | verbose", "info <player>",
+                .taking("(nothing): the suspects screen", "alerts | verbose", "info <player>",
                         "log <player> [page]", "reset <player>", "checks", "status")
                 .needing(CheatPermissions.COMMAND));
     }

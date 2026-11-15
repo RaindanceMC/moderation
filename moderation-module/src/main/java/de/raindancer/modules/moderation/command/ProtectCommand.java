@@ -53,8 +53,8 @@ public final class ProtectCommand implements IModerationCommand {
     @Override
     public String describe() {
         return protecting
-                ? "protects an account from moderators — console only"
-                : "takes that protection off again — console only";
+                ? "protects an account from moderators, console only"
+                : "takes that protection off again, console only";
     }
 
     @Override

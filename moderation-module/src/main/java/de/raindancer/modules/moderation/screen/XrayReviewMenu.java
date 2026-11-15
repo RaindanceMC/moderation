@@ -47,7 +47,7 @@ public final class XrayReviewMenu extends ModerationList<XrayEvidenceService.Fin
 
     @Override
     protected Component title() {
-        return MINI.deserialize("<dark_gray>Mining evidence — <white>" + subjectName);
+        return MINI.deserialize("<dark_gray>Mining evidence: <white>" + subjectName);
     }
 
     @Override
@@ -76,7 +76,7 @@ public final class XrayReviewMenu extends ModerationList<XrayEvidenceService.Fin
         }
         lore.add("");
         if (find.kind() == null) {
-            lore.add("<red>A bait ore — fake, sealed in rock, visible only to an x-ray.");
+            lore.add("<red>A bait ore: fake, sealed in rock, visible only to an x-ray.");
             lore.add("<dark_gray>Their digging reached it.");
         } else {
             lore.add("<gray>A new vein their digging uncovered.");

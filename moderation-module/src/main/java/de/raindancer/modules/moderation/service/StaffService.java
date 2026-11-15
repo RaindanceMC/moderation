@@ -259,7 +259,7 @@ public final class StaffService implements IModerationService {
             // outlives a rank. Said in the console, because the alternative is a demotion that looks
             // complete and is not.
             log.warn("{} is still a server operator, which this module did not grant and will not "
-                    + "take away. Their rank no longer implies it — remove it with /deop if that was "
+                    + "take away. Their rank no longer implies it. Remove it with /deop if that was "
                     + "the intention.", them.getName() == null ? who.toString() : them.getName());
             return;
         }
@@ -377,6 +377,6 @@ public final class StaffService implements IModerationService {
 
     @Override
     public String describe() {
-        return "promoting and demoting staff — the staff groups, and the record of who did it";
+        return "promoting and demoting staff: the staff groups, and the record of who did it";
     }
 }

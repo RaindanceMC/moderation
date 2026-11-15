@@ -30,7 +30,7 @@ public final class AttemptsCommand extends LogSearchCommand<BlockedAttempts.Atte
 
     @Override
     public String describe() {
-        return "what punished players tried to do anyway — joining while banned, talking while muted";
+        return "what punished players tried to do anyway: joining while banned, talking while muted";
     }
 
     @Override

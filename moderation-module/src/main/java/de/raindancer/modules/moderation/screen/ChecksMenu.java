@@ -32,7 +32,7 @@ public final class ChecksMenu extends PaginatedMenu<CheckType> implements IModer
 
     @Override
     protected Component title() {
-        return MiniMessage.miniMessage().deserialize("<dark_gray>Anti-cheat — <white>checks</white>");
+        return MiniMessage.miniMessage().deserialize("<dark_gray>Anti-cheat: <white>checks</white>");
     }
 
     @Override
@@ -58,7 +58,7 @@ public final class ChecksMenu extends PaginatedMenu<CheckType> implements IModer
         lore.add("<dark_gray>" + check.description());
         lore.add("");
         lore.add(state == CheckStateRule.State.ON ? "<green>On"
-                : state == CheckStateRule.State.WATCH ? "<yellow>Watching only — alerts, nothing more" : "<red>Off");
+                : state == CheckStateRule.State.WATCH ? "<yellow>Watching only: alerts, nothing more" : "<red>Off");
         lore.add(check.kickAt() > 0 ? "<dark_gray>Kicks at level " + check.kickAt() : "<dark_gray>Never kicks");
         ItemStack icon = Icons.of(state == CheckStateRule.State.OFF ? Material.GRAY_DYE : check.category().icon(),
                 (state == CheckStateRule.State.ON ? "<green>" : state == CheckStateRule.State.WATCH ? "<yellow>" : "<gray>") + check.title(),

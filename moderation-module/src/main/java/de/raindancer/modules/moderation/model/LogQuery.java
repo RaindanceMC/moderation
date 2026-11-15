@@ -223,7 +223,7 @@ public record LogQuery(List<String> players, Instant from, Instant to, List<Stri
                     + String.join(", ", players.stream().map(shown).toList()));
         }
         if (from != null || to != null) {
-            parts.add((from == null ? "…" : Moments.show(from, zone)) + " – "
+            parts.add((from == null ? "…" : Moments.show(from, zone)) + " to "
                     + (to == null ? "now" : Moments.show(to.minusSeconds(1), zone)));
         }
         if (!types.isEmpty()) {

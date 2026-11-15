@@ -51,7 +51,7 @@ public final class HistoryMenu extends ModerationList<RecordEntry> {
 
     @Override
     protected Component title() {
-        return MINI.deserialize("<dark_gray>Record — <white>" + subjectName);
+        return MINI.deserialize("<dark_gray>Record: <white>" + subjectName);
     }
 
     @Override
@@ -133,20 +133,20 @@ public final class HistoryMenu extends ModerationList<RecordEntry> {
 
         if (past.liftedAt() != null) {
             lore.add("");
-            lore.add("<green>Lifted by " + nameOf(past.lifter(), null) + " — "
+            lore.add("<green>Lifted by " + nameOf(past.lifter(), null) + ": "
                     + past.liftReason().orElse("no reason given"));
         } else if (past.isActiveAt(now)) {
             lore.add("");
             lore.add("<red>Still in force" + past.remainingAt(now)
-                    .map(left -> " — " + Times.brief(left) + " left").orElse(""));
+                    .map(left -> ", " + Times.brief(left) + " left").orElse(""));
         }
         // Which preset it was, when it was one. A record full of free text is one nothing can count,
         // and saying so on the entry is how that becomes visible rather than merely true.
         Optional<Reason> preset = services().reasons().matching(past.reason());
         lore.add("");
-        lore.add(preset.map(reason -> "<dark_gray>" + reason.severity().describe() + " — counts "
+        lore.add(preset.map(reason -> "<dark_gray>" + reason.severity().describe() + ": counts "
                         + "towards the ladder")
-                .orElse("<dark_gray>Typed by hand — counts towards nothing"));
+                .orElse("<dark_gray>Typed by hand: counts towards nothing"));
 
         return Icons.of(iconFor(past), "<yellow>" + past.kind().past(), lore);
     }

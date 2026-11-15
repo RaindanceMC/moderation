@@ -66,7 +66,7 @@ public final class ReportFormDialog extends ModerationDialog {
         ReportPlace reporterAt = ReportService.placeOf(viewer);
         ReportPlace subjectAt = ReportService.placeOf(services().server().getPlayer(subject));
         // The reason in front of what they typed, so the queue reads as a reason and the detail survives.
-        String text = preset.title() + " — " + typed;
+        String text = preset.title() + ": " + typed;
         services().reportService().file(viewer.getUniqueId(), viewer.getName(), subject, subjectName, text, preset,
                         reporterAt, subjectAt)
                 .ifPresentOrElse(filed -> tell("moderation.report.filed", "id", filed.id(), "player", subjectName),

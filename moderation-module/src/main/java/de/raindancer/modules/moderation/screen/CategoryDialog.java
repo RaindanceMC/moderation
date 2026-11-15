@@ -58,7 +58,7 @@ public final class CategoryDialog extends ModerationDialog {
                             : "<gray>Nothing in force.",
                     inForce.isEmpty() ? "Nothing to lift" : "You may not lift this",
                     answers -> new ConfirmScreen(services(), viewer, (Runnable) this::open,
-                            "<green>" + lift(kind) + " — " + literal(subjectName) + "?",
+                            "<green>" + lift(kind) + ": " + literal(subjectName) + "?",
                             List.of("<gray>" + afterLifting(kind), "<dark_gray>The punishment stays on their record."),
                             this::liftIt).open());
         }

@@ -80,7 +80,7 @@ public final class FineDialog extends ModerationDialog {
             return;
         }
         if (why.isEmpty()) {
-            form(typedAmount, why).withNotice("Say what it is for — they are told.").show(viewer);
+            form(typedAmount, why).withNotice("Say what it is for. They are told.").show(viewer);
             return;
         }
         new ConfirmScreen(services(), viewer, () -> form(typedAmount, why).show(viewer),

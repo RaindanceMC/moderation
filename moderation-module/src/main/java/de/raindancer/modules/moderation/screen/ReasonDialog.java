@@ -45,7 +45,7 @@ public final class ReasonDialog extends ModerationDialog {
         DialogPage page = titled(subjectName, CategoryDialog.verb(kind), name())
                 .text("<white>Why is <bold>" + literal(subjectName) + "</bold> being "
                         + kind.past() + "? <gray>" + (reasons.isEmpty()
-                        ? "Nothing in the catalogue hands out a " + kind.name().toLowerCase(Locale.ROOT) + " — type why below."
+                        ? "Nothing in the catalogue hands out a " + kind.name().toLowerCase(Locale.ROOT) + ". Type why below."
                         : "Pick a reason; each says what it would cost them.") )
                 .field(OWN, "<white>…or your own reason <dark_gray>(counts towards no ladder)", "", 200);
         for (Reason reason : reasons) {
@@ -65,7 +65,7 @@ public final class ReasonDialog extends ModerationDialog {
         }
         if (reason.escalates()) {
             text.append("\n<dark_gray>").append(priors == 0 ? "Their first."
-                    : "Their " + ordinal(priors + 1) + " — the ladder has been climbed.");
+                    : "Their " + ordinal(priors + 1) + ". The ladder has been climbed.");
         }
         text.append("\n\n<dark_gray>").append(kind.isLasting() ? "Then choose how long." : "Asks first.");
         return text.toString();
@@ -100,7 +100,7 @@ public final class ReasonDialog extends ModerationDialog {
             return;
         }
         // A kick and a warning have no length, so the confirmation is the whole second step.
-        new ConfirmScreen(services(), viewer, (Runnable) this::open, "<yellow>" + literal(reason.label()) + " — " + literal(subjectName) + "?",
+        new ConfirmScreen(services(), viewer, (Runnable) this::open, "<yellow>" + literal(reason.label()) + ": " + literal(subjectName) + "?",
                 List.of("<gray>" + (kind == PunishmentKind.KICK
                         ? "They are thrown off now and may come straight back."
                         : "It goes on their record and stops nothing.")),

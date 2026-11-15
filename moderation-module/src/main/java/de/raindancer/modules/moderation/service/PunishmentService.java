@@ -370,7 +370,7 @@ public final class PunishmentService implements IModerationService {
         String line = "<white><subject></white> is <yellow>" + what + "</yellow>"
                 + (length == null ? "" : kind == PunishmentKind.WARNING ? " <gray>(fined <length>)</gray>"
                 : " <gray>(<length>)</gray>")
-                + (named ? " <gray>— by <white><moderator></white></gray>" : "")
+                + (named ? " <gray>by <white><moderator></white></gray>" : "")
                 + "<gray>: <reason>";
 
         // Said where the staff are, wherever that is: the other servers' staff (or everybody, for a public

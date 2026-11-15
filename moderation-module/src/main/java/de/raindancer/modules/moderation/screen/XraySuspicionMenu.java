@@ -50,7 +50,7 @@ public final class XraySuspicionMenu extends ModerationList<UUID> {
 
     @Override
     protected Component title() {
-        return MINI.deserialize("<dark_gray>Mining suspicion — <white>everybody</white>");
+        return MINI.deserialize("<dark_gray>Mining suspicion: <white>everybody</white>");
     }
 
     @Override

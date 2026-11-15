@@ -117,8 +117,8 @@ public record ModerationSettings(
         int warnsBeforeBan,
 
         @In("moderation/punishments") @Title("Warnings count for") @Range(min = 1, max = 3650)
-        @Describe("Days. A warning older than this no longer counts towards the threshold — without a "
-                + "window, a bad week two summers ago would still be banning people today.")
+        @Describe("Days. A warning older than this no longer counts towards the threshold. Without a "
+                + "window, an old warning would still count towards a ban years later.")
         @Key("punishments.warn-window-days")
         int warnWindowDays,
 
@@ -161,8 +161,8 @@ public record ModerationSettings(
         boolean reportsEnabled,
 
         @In("moderation/reports") @Title("Wait between reports") @Range(min = 0, max = 3600)
-        @Describe("Seconds. 0 for no wait at all — a small server where everybody knows everybody "
-                + "wants none of these limits.")
+        @Describe("Seconds. 0 for no wait at all. A small server where everybody knows everybody "
+                + "may want none of these limits.")
         @Key("reports.cooldown-seconds")
         int reportCooldownSeconds,
 
@@ -191,13 +191,13 @@ public record ModerationSettings(
         @In("moderation/suspicious") @Title("Watch for suspicious commands")
         @Describe("Typing one of the commands below files an automatic report on the player, the "
                 + "same queue a moderator's own /report goes into. For a command that only makes "
-                + "sense alongside a seed cracker or a similar outside tool — /seed is the obvious "
+                + "sense alongside a seed cracker or a similar outside tool. /seed is the obvious "
                 + "one, since a seed is what a cracker needs to find every structure in the world.")
         @Key("suspicious.enabled")
         boolean suspiciousCommandsEnabled,
 
         @In("moderation/suspicious") @Title("Which commands")
-        @Describe("Names, comma separated, without the slash and without arguments — 'seed' catches "
+        @Describe("Names, comma separated, without the slash and without arguments. 'seed' catches "
                 + "'/seed' and '/seed confirm' alike. Matched against the first word only, so this "
                 + "never catches a command that merely contains one of these as a substring.")
         @Key("suspicious.commands")
@@ -206,7 +206,7 @@ public record ModerationSettings(
         @In("moderation/suspicious") @Title("Wait before flagging the same player again")
         @Range(min = 0, max = 86400)
         @Describe("Seconds. Typing a watched command five times in a row should file one report, "
-                + "not five — the queue exists to be read, and a moderator stops trusting it the "
+                + "not five. The queue exists to be read, and a moderator stops trusting it the "
                 + "first time it is five identical lines about the same person. 0 files one every "
                 + "time.")
         @Key("suspicious.cooldown-seconds")
@@ -215,15 +215,15 @@ public record ModerationSettings(
         // ───────────────────────────────────────────────────────────── x-ray detection
 
         @In("moderation/xray") @Title("Watch mining for x-ray")
-        @Describe("The server cannot see a texture pack or a hacked client — what it can see is which "
+        @Describe("The server cannot see a texture pack or a hacked client, but it can see which "
                 + "blocks somebody chooses to break. This watches the ratio of valuable ore to "
-                + "everything else a player has mined recently, and files a report — the same queue "
-                + "/report uses — when it looks like a pattern rather than luck.")
+                + "everything else a player has mined recently, and files a report (the same queue "
+                + "/report uses) when it looks like a pattern rather than luck.")
         @Key("xray.enabled")
         boolean xrayDetectionEnabled,
 
         @In("moderation/xray") @Title("Which blocks count as valuable")
-        @Describe("Material names, comma separated, exactly as Bukkit spells them — "
+        @Describe("Material names, comma separated, exactly as Bukkit spells them: "
                 + "'DIAMOND_ORE, DEEPSLATE_DIAMOND_ORE'. An unknown name is skipped rather than "
                 + "refusing the whole list.")
         @Key("xray.ores")
@@ -259,7 +259,7 @@ public record ModerationSettings(
         boolean vanishOnJoinForStaff,
 
         @In("moderation/staff") @Title("Staff may promote below themselves")
-        @Describe("On lets a mod appoint a trial mod and an admin appoint a mod — each rank may hand "
+        @Describe("On lets a mod appoint a trial mod and an admin appoint a mod: each rank may hand "
                 + "out the one below its own, and never its own or above. Off keeps every appointment "
                 + "with the server owner.")
         @Key("staff.may-promote-below")
@@ -272,7 +272,7 @@ public record ModerationSettings(
         boolean mayDemoteBelow,
 
         @In("moderation/staff") @Title("Admins are operators")
-        @Describe("Off, and deliberately. Op is not a permission — it is every permission of every "
+        @Describe("Off, and deliberately. Op is not a permission, it is every permission of every "
                 + "plugin on the server, plus /stop and /op itself, so an opped admin can promote "
                 + "themselves and switch off whatever limits them. Turn this on only if your admins "
                 + "are co-owners. Moderators are never opped, whatever this says.")
@@ -291,7 +291,7 @@ public record ModerationSettings(
         boolean auditEverything,
 
         @In("moderation/records") @Title("Keep records for") @Range(min = 0, max = 3650)
-        @Describe("Days. Punishments that ended, closed reports and staff notes older than this are deleted — never a "
+        @Describe("Days. Punishments that ended, closed reports and staff notes older than this are deleted, never a "
                 + "punishment still in force or an open report. They name real people, so under the GDPR they may only be "
                 + "kept while there is a reason. 0 keeps them for ever.")
         @Key("records.keep-days")
@@ -315,7 +315,7 @@ public record ModerationSettings(
 
         @In("moderation/punishments") @Title("The Banhammer")
         @Describe("Somebody with rainsmoderation.banhammer (operators by default) who kills a player with "
-                + "a mace named Banhammer — in any colour — bans them for ever on the spot. Off: a mace "
+                + "a mace named Banhammer (in any colour) bans them for ever on the spot. Off: a mace "
                 + "with that name is just a mace.")
         @Key("punishments.banhammer")
         boolean banhammer,
@@ -323,8 +323,8 @@ public record ModerationSettings(
         // ───────────────────────────────────────────────────────────── x-ray, the second generation
 
         @In("moderation/xray") @Title("Bait ores")
-        @Describe("Lays a hidden layer of fake ore veins into the rock — diamonds and gold deep down, "
-                + "debris in the nether — that only an x-ray can see. Nobody honest can see them, so "
+        @Describe("Lays a hidden layer of fake ore veins into the rock: diamonds and gold deep down, "
+                + "debris in the nether. Only an x-ray shows them. Nobody honest can see them, so "
                 + "nobody honest steers for them; a vein turns back into stone before a tunnel gets close "
                 + "enough to show it. How often somebody comes near them, against how often chance alone "
                 + "would, is the strongest evidence there is.")
@@ -358,7 +358,7 @@ public record ModerationSettings(
         String warnFine,
 
         @In("moderation/fines") @Title("A warning costs, share of balance") @Range(min = 0, max = 100)
-        @Describe("Percent of the player's balance, instead of or besides the amounts above — the larger "
+        @Describe("Percent of the player's balance, instead of or besides the amounts above. The larger "
                 + "of the two is charged. 0: off.")
         @Key("punishments.warn-fine-percent")
         int warnFinePercent,
@@ -380,7 +380,7 @@ public record ModerationSettings(
         String modFineMax,
 
         @In("moderation/fines") @Title("Unpaid fines become debt")
-        @Describe("On: what the balance cannot cover is taken as far as it goes and the rest is owed — "
+        @Describe("On: what the balance cannot cover is taken as far as it goes and the rest is owed. "
                 + "/debt shows it, and the economy collects it from future income. Off: a fine somebody "
                 + "cannot pay is refused.")
         @Key("fines.unpaid-becomes-debt")
@@ -440,7 +440,7 @@ public record ModerationSettings(
 
         @In("moderation/anticheat/actions") @Title("Tell staff")
         @Describe("Staff with rainsanticheat.alerts on every server of the network are told when Grim flags a "
-                + "player past a family's alert level, at most once a second per family — repeats are counted "
+                + "player past a family's alert level, at most once a second per family. Repeats are counted "
                 + "into the next line.")
         @Key("anticheat.alerts")
         boolean cheatAlerts,
@@ -530,7 +530,7 @@ public record ModerationSettings(
         boolean cheatAnnounceBrands,
 
         @In("moderation/anticheat") @Title("Hide players behind walls")
-        @Describe("Anti-ESP: a player nobody could see — solid blocks in every line between them — is not sent "
+        @Describe("Anti-ESP: a player nobody could see (solid blocks in every line between them) is not sent "
                 + "to the other's client at all, so wallhacks and tracers have nothing to draw. They stay in the "
                 + "tab list. Costs a few ray traces per pair of nearby players, five times a second. Not on Folia.")
         @Key("anticheat.anti-esp")
@@ -542,7 +542,7 @@ public record ModerationSettings(
         int cheatAntiEspRange,
 
         @In("moderation/anticheat/reports") @Title("Report cheaters")
-        @Describe("When Grim keeps flagging a player over a stretch of time — not a burst, a pattern — one "
+        @Describe("When Grim keeps flagging a player over a stretch of time, one "
                 + "report goes into the moderation queue, from 'the console', with what was seen and a link to "
                 + "the evidence. It never punishes: staff decide. Not filed again while an open one about the "
                 + "same player and kind waits.")

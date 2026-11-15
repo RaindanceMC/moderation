@@ -38,7 +38,7 @@ public final class ReportCategoryDialog extends ModerationDialog {
         DialogPage page = titled(name()).columns(2)
                 .face(subject, () -> Icons.head(subject, "<white>" + subjectName), "<white>You are reporting <bold>"
                         + literal(subjectName) + "</bold>.\n<gray>Pick what fits best, then say what happened. "
-                        + "A moderator decides what to do — a report is not a punishment.");
+                        + "A moderator decides what to do. A report is not a punishment.");
         for (ReportGroup group : ReportGroup.values()) {
             String inIt = ReportPreset.in(group).stream().map(preset -> "<gray>· " + preset.title())
                     .collect(Collectors.joining("\n"));

@@ -95,7 +95,7 @@ public final class ConfidenceRule implements IModerationRule {
                 && ReportKind.of(hit.check()).orElse(null) == kind).toList();
         if (impossible.size() >= IMPOSSIBLE_ENOUGH) {
             Hit last = impossible.getLast();
-            return new Verdict(true, String.format(Locale.ROOT, "%s x%d — no vanilla client can do that · last: %s",
+            return new Verdict(true, String.format(Locale.ROOT, "%s x%d: no vanilla client can do that · last: %s",
                     last.check().key(), impossible.size(), last.detail()));
         }
         if (level < policy.minLevel()) {

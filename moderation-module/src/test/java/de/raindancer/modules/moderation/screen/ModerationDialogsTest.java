@@ -277,7 +277,7 @@ class ModerationDialogsTest {
             form.button("Send the report").press(mod, typed(Map.of(ReportFormDialog.REASON, "xray",
                     ReportFormDialog.WHAT, "straight to diamonds")));
         }
-        verify(reporting).file(eq(modId), eq("Mod"), eq(bobId), eq("Bob"), eq("X-ray — straight to diamonds"),
+        verify(reporting).file(eq(modId), eq("Mod"), eq(bobId), eq("Bob"), eq("X-ray: straight to diamonds"),
                 eq(ReportPreset.XRAY), any(), any());
     }
 }

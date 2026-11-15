@@ -22,7 +22,7 @@ public final class RuleBreachRule implements IModerationRule {
     /** @return empty when the rule has no ladder — there is nothing fixed to hand out */
     public Optional<Breach> breach(ServerRule rule, int priorOffences, String note) {
         String added = note == null ? "" : note.strip();
-        String reason = "Broke rule " + rule.number() + ": " + rule.title() + (added.isEmpty() ? "" : " — " + added);
+        String reason = "Broke rule " + rule.number() + ": " + rule.title() + (added.isEmpty() ? "" : " (" + added + ")");
         return rule.forOffence(priorOffences)
                 .map(penalty -> new Breach(rule, penalty, Math.max(0, priorOffences) + 1, reason));
     }

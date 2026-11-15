@@ -78,7 +78,7 @@ public final class StaffMenu extends ModerationList<StaffMenu.OnShift> {
         List<String> lore = new ArrayList<>();
         var ranks = services().roster().ranksOf(who.id());
         if (ranks.isEmpty()) {
-            lore.add("<dark_gray>No rank — permissions from somewhere else.");
+            lore.add("<dark_gray>No rank, permissions come from somewhere else.");
         }
         ranks.stream().sorted().forEach(rank -> lore.add("<" + rank.colour() + ">" + rank.title()));
         if (who.server() != null) {
@@ -102,7 +102,7 @@ public final class StaffMenu extends ModerationList<StaffMenu.OnShift> {
     @Override
     protected List<String> helpLines() {
         return List.of("<gray>Everybody here can see a punishment record.",
-                "<gray>Vanished staff are shown — this page is for you, not for players.");
+                "<gray>Vanished staff are shown. This page is for staff, not for players.");
     }
 
     @Override

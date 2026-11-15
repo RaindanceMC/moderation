@@ -115,7 +115,7 @@ public final class LiftMenu extends ModerationList<Punishment> {
             return;
         }
         new ConfirmScreen(services(), viewer, this,
-                "<green>Lift the " + kind.name().toLowerCase(Locale.ROOT) + " — " + name + "?",
+                "<green>Lift the " + kind.name().toLowerCase(Locale.ROOT) + " for " + name + "?",
                 List.of("<gray>They will be able to " + afterLifting() + " again.",
                         "<dark_gray>It stays on their record either way."),
                 () -> lift(serving, name)).open();

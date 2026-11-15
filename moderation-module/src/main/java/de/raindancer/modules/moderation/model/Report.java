@@ -146,6 +146,6 @@ public record Report(String id, UUID reporter, String reporterName, UUID subject
 
     /** One line, for a console log or a chat row. */
     public String summary() {
-        return id + " — " + subjectName + ": " + text + " (" + state.describe() + ")";
+        return id + " (" + subjectName + "): " + text + " (" + state.describe() + ")";
     }
 }

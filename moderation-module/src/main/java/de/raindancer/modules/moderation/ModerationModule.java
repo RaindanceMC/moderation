@@ -72,7 +72,7 @@ import java.util.UUID;
 public final class ModerationModule implements FlexModule {
 
     private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.28.0")
-            .describedAs("Bans, mutes, reports, staff notes and the screens for them — over "
+            .describedAs("Bans, mutes, reports, staff notes and the screens for them, over "
                     + "RainsCore's punishments, which stay whether or not this is installed")
             .by("Raindancer118");
 
@@ -315,7 +315,7 @@ public final class ModerationModule implements FlexModule {
             }
             roster.load();
             log.info("{} staff member(s) in the staff groups{}.", roster.size(),
-                    groups.editable() ? " — edit the groups in /lp editor" : " (no LuckPerms: defaults only)");
+                    groups.editable() ? " (edit the groups in /lp editor)" : " (no LuckPerms: defaults only)");
         });
         var duty = context.settings(StaffDutySettings.class, StaffDutySettings.DEFAULTS);
         de.raindancer.core.platform.permission.Duty.powersNeedAdminMode(duty.current().powersNeedAdminMode());

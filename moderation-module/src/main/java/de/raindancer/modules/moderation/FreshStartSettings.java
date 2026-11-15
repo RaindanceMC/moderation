@@ -18,7 +18,7 @@ public record FreshStartSettings(
 
         @In("moderation/anticheat/fresh-start") @Title("Rules whose ban starts the anti-cheat afresh")
         @Describe("Rules by title as players read them (no-cheating for \"No cheating\") or by id, one per line. "
-                + "A ban for one of these — by a moderator or by the anti-cheat — keeps every "
+                + "A ban for one of these, by a moderator or by the anti-cheat, keeps every "
                 + "punishment on the record but wipes the anti-cheat's counts (violations, x-ray ledger), as "
                 + "/ac reset does, so a player back from the ban is judged on what they do from then on.")
         @Key("anticheat.fresh-start-rules")

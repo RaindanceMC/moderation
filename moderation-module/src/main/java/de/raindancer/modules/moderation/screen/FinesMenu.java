@@ -42,7 +42,7 @@ public final class FinesMenu extends ModerationList<FineRecord> {
 
     @Override
     protected Component title() {
-        return MINI.deserialize("<dark_gray>Fines — <white>" + subjectName);
+        return MINI.deserialize("<dark_gray>Fines: <white>" + subjectName);
     }
 
     @Override
@@ -82,7 +82,7 @@ public final class FinesMenu extends ModerationList<FineRecord> {
         }
         lore.add("");
         if (fine.revoked()) {
-            lore.add("<green>Revoked — " + Fees.format(Money.of(fine.refunded())) + " given back");
+            lore.add("<green>Revoked: " + Fees.format(Money.of(fine.refunded())) + " given back");
         } else {
             lore.add(may(ModerationPermission.FINE)
                     ? "<dark_gray>Click to revoke it and give back what was paid. Asks first."
