@@ -22,8 +22,8 @@ import java.util.function.LongSupplier;
 public final class ViolationLedger {
 
     /** A level after decay, plus the delta, never below zero — in SQL both dialects share. */
-    private static final String DECAYED = "(CASE WHEN ac_violation.level - (? - ac_violation.updated_at) / 60000.0 * ? > 0 "
-            + "THEN ac_violation.level - (? - ac_violation.updated_at) / 60000.0 * ? ELSE 0 END)";
+    private static final String DECAYED = "(CASE WHEN ac_violation.level + (ac_violation.updated_at - ?) / 60000.0 * ? > 0 "
+            + "THEN ac_violation.level + (ac_violation.updated_at - ?) / 60000.0 * ? ELSE 0 END)";
     private static final String UPSERT = "INSERT INTO ac_violation (player, check_key, level, updated_at) VALUES (?, ?, ?, ?) "
             + "ON CONFLICT(player, check_key) DO UPDATE SET level = CASE WHEN " + DECAYED + " + ? > 0 THEN " + DECAYED
             + " + ? ELSE 0 END, updated_at = ?";
