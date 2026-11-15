@@ -32,7 +32,8 @@ public record AntiCheatServices(
         PunishService punishments,
         EvidenceLog evidence,
         PacketTap tap,
-        EspShield shield) {
+        EspShield shield,
+        BotGuardServices bots) {
 
     public AntiCheatSettings config() {
         return settings.get();

@@ -18,6 +18,7 @@ class GuideTest {
                 .module("moderation")
                 .settings(ModerationSettings.class, ModerationSettings.DEFAULTS)
                 .settings(StaffDutySettings.class, StaffDutySettings.DEFAULTS)
+                .settings(BotGuardSettings.class, BotGuardSettings.DEFAULTS)
                 .otherTopics("rules", "admin-mode")
                 .commands(new ModerationModule().commands().stream().map(ModuleCommand::name).toList())
                 .problems()).isEmpty();

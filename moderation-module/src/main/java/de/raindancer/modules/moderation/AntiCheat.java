@@ -1,6 +1,20 @@
 package de.raindancer.modules.moderation;
 
 import de.raindancer.core.data.settings.SettingsStore;
+import de.raindancer.core.data.sql.Database;
+import de.raindancer.core.moderation.punishment.BlockedAttempts;
+import de.raindancer.core.moderation.punishment.PunishmentKind;
+import de.raindancer.core.moderation.reports.AutoReports;
+import de.raindancer.core.platform.network.NetworkBus;
+import de.raindancer.core.ui.screen.LeaveScreen;
+import de.raindancer.modules.moderation.listener.BotGuardListener;
+import de.raindancer.modules.moderation.listener.MacroListener;
+import de.raindancer.modules.moderation.model.AutoAction;
+import de.raindancer.modules.moderation.service.BotGuard;
+import de.raindancer.modules.moderation.service.MacroWatch;
+import de.raindancer.modules.moderation.store.SuspectCases;
+import java.time.Instant;
+import java.util.UUID;
 import de.raindancer.core.data.store.YamlStore;
 import de.raindancer.core.platform.util.Scheduling;
 import de.raindancer.modules.api.ModuleContext;
@@ -45,6 +59,66 @@ public final class AntiCheat {
     static final String FORMER_PLUGIN = "RainsAntiCheat";
 
     private AntiCheat() {
+    }
+
+    /**
+     * Bot accounts and macros: their settings, the network's case list, the lockdown and what touches players.
+     * Cases are written off the server's threads and deleted after their keeping time.
+     */
+    private static BotGuardServices startBotGuard(ModuleContext context, Database database, NetworkBus bus,
+                                                  AlertService alerts, byte[] addressKey) {
+        var plugin = context.plugin();
+        var server = plugin.getServer();
+        var core = context.core();
+        var messages = core.messages();
+        SettingsStore<BotGuardSettings> settings = context.settings(BotGuardSettings.class, BotGuardSettings.DEFAULTS);
+        SuspectCases cases = new SuspectCases(database, bus.server());
+        BotGuard.Cases record = (player, name, kind, at, detail) ->
+                Scheduling.async(plugin, () -> cases.record(player, name, kind, at, detail));
+        BotGuard.Hands hands = new BotGuard.Hands() {
+            @Override
+            public void refuse(UUID id) {
+                Player player = server.getPlayer(id);
+                if (player != null) {
+                    Scheduling.entity(plugin, player, () -> player.kick(LeaveScreen.framed(messages.get("anticheat.lockdown-screen"))));
+                }
+            }
+
+            @Override
+            public void act(UUID id, String name, AutoAction action, String why) {
+                String reason = "Automatic: " + (why.length() > 120 ? why.substring(0, 120) : why);
+                Player player = server.getPlayer(id);
+                Runnable punish = () -> {
+                    core.punishments().punish(id, action.kind(), null, reason, action.length());
+                    if (action.kind() == PunishmentKind.BAN) {
+                        core.banBridge().mirrorBan(id, reason, action.length() == null ? null : Instant.now().plus(action.length()));
+                    }
+                    if (player != null && player.isOnline()
+                            && (action.kind() == PunishmentKind.KICK || action.kind() == PunishmentKind.BAN)) {
+                        player.kick(LeaveScreen.framed(messages.get("anticheat.suspect-screen")));
+                    }
+                };
+                if (player != null) {
+                    Scheduling.entity(plugin, player, punish);
+                } else {
+                    Scheduling.global(plugin, punish);
+                }
+            }
+        };
+        BotGuard.Staff staff = alerts::staff;
+        // Only a keyed hash of the network is ever held, and only for the wave window. Without the key, nothing.
+        BotGuard guard = new BotGuard(settings::current, System::currentTimeMillis,
+                network -> addressKey.length == 0 ? null : BlockedAttempts.hashAddress(addressKey, network),
+                staff, record, hands, bus);
+        context.closeWith(guard::close);
+        MacroWatch macros = new MacroWatch(settings::current, System::currentTimeMillis, staff, record, hands,
+                (id, name, text) -> AutoReports.file(id, name, "macro", text));
+        var ticking = Scheduling.asyncTimer(plugin, 1, 1, task -> guard.tick());
+        context.closeWith(ticking::cancel);
+        var retention = Scheduling.asyncTimer(plugin, 120, 6 * 60 * 60, task ->
+                cases.sweep(System.currentTimeMillis() - settings.current().keepDays() * 86_400_000L));
+        context.closeWith(retention::cancel);
+        return new BotGuardServices(settings, guard, macros, cases);
     }
 
     /**
@@ -108,16 +182,19 @@ public final class AntiCheat {
         all.forEach(service -> service.settings(settings.current()));
         settings.onChange(fresh -> all.forEach(service -> service.settings(fresh)));
 
-        AntiCheatServices services = new AntiCheatServices(context.plugin(), context.plugin().getServer(), context.core(),
-                context.log(), messages, context.chat(), () -> settings.current().antiCheat(), settings, tracks, violations, alerts, punishments,
-                evidence, tap, shield);
         // The network's address key, the one blocked joins are hashed with, so a sighting here matches one anywhere.
         byte[] addressKey = context.core().secrets().bytes("address-hash", 32,
                 folder.getParent().resolve("RainsCore").resolve("address-hash.key")).orElse(new byte[0]);
+        BotGuardServices bots = startBotGuard(context, database, bus, alerts, addressKey);
+        AntiCheatServices services = new AntiCheatServices(context.plugin(), context.plugin().getServer(), context.core(),
+                context.log(), messages, context.chat(), () -> settings.current().antiCheat(), settings, tracks, violations, alerts, punishments,
+                evidence, tap, shield, bots);
         AltWatch alts = new AltWatch(addresses, addressKey, context.core().punishments(), alerts, context.log());
 
         List<IModerationListener> listeners = new ArrayList<>();
         listeners.add(new ConnectionListener(services, listeners, alts));
+        listeners.add(new BotGuardListener(context.plugin(), bots.guard(), bots::config, context.core()::isNewPlayer));
+        listeners.add(new MacroListener(bots.macros(), tracks));
         listeners.forEach(context::listener);
 
         // Players already online when the module starts (a reload) get what joining would have given them.

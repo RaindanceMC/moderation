@@ -53,7 +53,19 @@ public final class AntiCheatDatabase {
                 name    TEXT    NOT NULL,
                 updated INTEGER NOT NULL,
                 data    TEXT    NOT NULL
-            )""");
+            )""",
+            // 3.30.0: suspected bot accounts and macro users, for staff, deleted after cases.keep-days. No addresses.
+            """
+            CREATE TABLE ac_suspect (
+                id     INTEGER PRIMARY KEY AUTOINCREMENT,
+                player TEXT    NOT NULL,
+                name   TEXT    NOT NULL,
+                kind   TEXT    NOT NULL,
+                at     INTEGER NOT NULL,
+                server TEXT    NOT NULL,
+                detail TEXT    NOT NULL
+            )""",
+            "CREATE INDEX ac_suspect_at ON ac_suspect (at)");
 
     private AntiCheatDatabase() {
     }

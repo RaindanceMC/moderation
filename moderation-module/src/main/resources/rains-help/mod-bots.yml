@@ -1,0 +1,38 @@
+id: mod-bots
+title: "Bot accounts and macros"
+summary: Staff, what the server notices about bot accounts and macros, the cases list and the lockdown.
+intro: |
+  The server watches new accounts and click rhythms. It tells staff and writes a case. It punishes only if an owner set an action.
+icon: ARMOR_STAND
+category: Staff
+order: 55
+module: moderation
+permission: rainsanticheat.command
+aliases: [bots, macros, autoclicker, lockdown]
+keywords: [bot, macro, autoclicker, wave, raid, quarantine]
+related: [mod-investigate, mod-tools]
+sections:
+  - question: What counts as a bot account?
+    title: Signals
+    text: |
+      Only new accounts are watched. Signals: joining in a wave with others from one network (at least {setting:moderation-bots:bots.same-network}) or with names that differ only in their digits (at least {setting:moderation-bots:bots.same-names}), not moving or looking around in the first {setting:moderation-bots:bots.watch-seconds|seconds}, spamming the chat, sending no client brand or a bot client's brand.
+      From two signals staff are told and a case is written. One alone is common: newcomers reading the rules stand still.
+  - question: What happens during a join wave?
+    title: Lockdown
+    text: |
+      {setting:moderation-bots:bots.wave-joins} new accounts within {setting:moderation-bots:bots.wave-seconds|seconds} are a wave, and staff are told. {if:moderation-bots:bots.auto-lockdown}If accounts in it share a network or similar names, new accounts are locked out of every server for {setting:moderation-bots:bots.lockdown-minutes|minutes}.{else}No lockdown starts by itself.{/if} A wave from everywhere, like a stream raid, is only told. Players who played before always get in.
+      {cmd:/anticheat lockdown [<minutes> | end]} starts or ends one by hand, with <white>rainsanticheat.manage</white>. Without a number it shows the state.
+  - question: How are macros found?
+    title: Macros and autoclickers
+    text: |
+      The gaps between clicks are measured. Clicks whose rhythm varies by at most {setting:moderation-bots:macros.max-variation} percent for {setting:moderation-bots:macros.minutes|minutes} are a macro; people vary by 10 to 20 percent. More than {setting:moderation-bots:macros.max-cps} left clicks a second for three seconds is an autoclicker. Mining, dropping items and a held right button are left out.
+      AFK status does not help here: a macro keeps its player active. {if:moderation-bots:macros.report}A finding also goes into the report queue.{/if}
+  - question: Where are the cases?
+    title: /anticheat bots
+    text: |
+      {run:/anticheat bots} lists cases from every server, newest first: who, what was seen, when and where. Click a case for the player's checks, right click to dismiss it (needs <white>rainsanticheat.manage</white>). The suspects screen ({run:/anticheat}) has a button for it.
+      Cases are deleted after {setting:moderation-bots:cases.keep-days|days}. They hold name, account id and what was seen, never an address. Network hashes of new accounts are only kept in memory for the wave window.
+  - question: Does anybody get punished automatically?
+    title: Actions
+    text: |
+      Only if an owner set it. Bots: {setting:moderation-bots:bots.action} from {setting:moderation-bots:bots.action-signals} signals. Macros: {setting:moderation-bots:macros.action}. Possible: none, kick, freeze (quarantine), freeze 1h, ban, ban 7d.

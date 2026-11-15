@@ -6,6 +6,7 @@ import de.raindancer.modules.moderation.AntiCheatSettings;
 import de.raindancer.modules.moderation.model.CheckType;
 import de.raindancer.modules.moderation.model.Evidence;
 import de.raindancer.modules.moderation.model.PlayerTrack;
+import de.raindancer.modules.moderation.screen.BotCasesMenu;
 import de.raindancer.modules.moderation.screen.SuspectsMenu;
 import de.raindancer.modules.moderation.util.CheatPermissions;
 import io.papermc.paper.command.brigadier.BasicCommand;
@@ -30,7 +31,7 @@ public final class AntiCheatCommand implements BasicCommand {
 
     private static final int LOG_PAGE = 10;
     private static final List<String> SUBCOMMANDS = List.of("alerts", "alert", "verbose", "info", "log", "go", "back",
-            "fresh", "reset", "checks", "status");
+            "fresh", "reset", "checks", "status", "bots", "lockdown");
 
     /** Where and how a staff member was before {@code /ac go}. */
     private record Watcher(org.bukkit.Location where, org.bukkit.GameMode mode) {
@@ -91,6 +92,8 @@ public final class AntiCheatCommand implements BasicCommand {
             case "back" -> back(live, sender);
             case "checks" -> checks(live, sender);
             case "status" -> status(live, sender);
+            case "bots" -> bots(live, sender);
+            case "lockdown" -> lockdown(live, sender, args);
             default -> {
                 if (!player(live, sender, args[0]) && !MistypedCommand.subcommand(sender, "anticheat", args, 0, SUBCOMMANDS)) {
                     live.messages().send(sender, "anticheat.usage");
@@ -327,6 +330,60 @@ public final class AntiCheatCommand implements BasicCommand {
                 "tap", live.tap().broken() ? "does not fit this server" : live.config().packetTap() ? "on" : "off");
     }
 
+    /** {@code /anticheat bots}: the cases screen, or the newest cases as lines for the console. */
+    private static void bots(AntiCheatServices live, CommandSender sender) {
+        if (sender instanceof Player viewer) {
+            BotCasesMenu.load(live, viewer, cases -> new BotCasesMenu(live, viewer, null, cases).open());
+            return;
+        }
+        de.raindancer.core.platform.util.Scheduling.async(live.plugin(), () -> {
+            var cases = live.bots().cases().newest(20);
+            if (cases.isEmpty()) {
+                live.messages().send(sender, "anticheat.bots-empty");
+                return;
+            }
+            live.messages().send(sender, "anticheat.bots-header", "count", cases.size());
+            SimpleDateFormat time = new SimpleDateFormat("dd.MM HH:mm", Locale.ROOT);
+            for (var found : cases) {
+                live.messages().send(sender, "anticheat.bots-line", "id", found.id(), "player", found.name(),
+                        "kind", BotCasesMenu.kindWord(found.kind()), "when", time.format(new Date(found.at())),
+                        "server", found.server().isBlank() ? "-" : found.server(), "detail", found.detail());
+            }
+        });
+    }
+
+    /** {@code /anticheat lockdown [minutes | end]}: new accounts kept out of the network, or let in again. */
+    private static void lockdown(AntiCheatServices live, CommandSender sender, String[] args) {
+        var guard = live.bots().guard();
+        if (args.length < 2) {
+            live.messages().send(sender, "anticheat.lockdown-state", "state", guard.lockedDown()
+                    ? "on, " + Math.max(1, guard.lockdownLeftMillis() / 60_000) + " min left" : "off");
+            return;
+        }
+        if (!manage(live, sender)) {
+            return;
+        }
+        String word = args[1].toLowerCase(Locale.ROOT);
+        if (word.equals("end") || word.equals("off") || word.equals("lift")) {
+            if (!guard.lift(sender.getName())) {
+                live.messages().send(sender, "anticheat.lockdown-state", "state", "off");
+            }
+            return;
+        }
+        int minutes;
+        try {
+            minutes = word.equals("on") ? live.bots().config().lockdownMinutes() : Integer.parseInt(word);
+        } catch (NumberFormatException notANumber) {
+            live.messages().send(sender, "anticheat.lockdown-usage");
+            return;
+        }
+        if (minutes < 1 || minutes > 1440) {
+            live.messages().send(sender, "anticheat.lockdown-usage");
+            return;
+        }
+        guard.lockdown(minutes, sender.getName());
+    }
+
     private static boolean manage(AntiCheatServices live, CommandSender sender) {
         if (!sender.hasPermission(CheatPermissions.MANAGE)) {
             live.messages().send(sender, "anticheat.no-permission");
@@ -377,7 +434,9 @@ public final class AntiCheatCommand implements BasicCommand {
         if (args.length <= 1) {
             options.addAll(SUBCOMMANDS);
             services.get().server().getOnlinePlayers().forEach(player -> options.add(player.getName()));
-        } else if (args.length == 2 && !List.of("alerts", "alert", "verbose", "checks", "status", "back").contains(args[0].toLowerCase(Locale.ROOT))) {
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("lockdown")) {
+            options.addAll(List.of("10", "30", "60", "end"));
+        } else if (args.length == 2 && !List.of("alerts", "alert", "verbose", "checks", "status", "back", "bots").contains(args[0].toLowerCase(Locale.ROOT))) {
             AntiCheatServices live = services.get();
             live.server().getOnlinePlayers().forEach(player -> options.add(player.getName()));
             if (List.of("log", "replay", "reset", "fresh").contains(args[0].toLowerCase(Locale.ROOT))) {

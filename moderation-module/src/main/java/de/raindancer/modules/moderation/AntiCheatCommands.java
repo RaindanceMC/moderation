@@ -19,7 +19,8 @@ public final class AntiCheatCommands {
                         new AntiCheatCommand(AntiCheatCommands::require))
                 .aliased("ac", "rac")
                 .taking("(nothing): the suspects screen", "alerts | verbose", "info <player>",
-                        "log <player> [page]", "reset <player>", "checks", "status")
+                        "log <player> [page]", "reset <player>", "checks", "status", "bots",
+                        "lockdown [<minutes> | end]")
                 .needing(CheatPermissions.COMMAND));
     }
 

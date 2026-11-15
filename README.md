@@ -29,3 +29,11 @@ Grim detects; this module keeps the network's account of it. What was added for 
 - **Alts** (`rules/AltRule`, `store/KnownAddresses`, `service/AltWatch`): a join from an address a banned account used within a month, or one four or more accounts share, is a line to staff. Addresses are kept only as the network's keyed hash (`core.secrets()` "address-hash"), a month, in `ac_address`. Nobody is refused by it.
 - **X-ray suspicion to staff**: past 90 % the anti-cheat alert channel says so (`anticheat.xray-suspect`), at most every ten minutes, before the report at `xray.report-score` fires.
 - **X-ray ledgers follow the player** (`ac_xray`): written with every flush, read on arrival when the network's copy is newer.
+
+## Bot accounts and macros (3.30.0)
+
+Settings `moderation-bots` (in game under Anti-cheat). Staff are told, a case is written (`ac_suspect`, network-wide, deleted after `cases.keep-days`, default 30). Nobody is punished unless `bots.action` / `macros.action` is set (kick, freeze, ban with or without a length).
+
+- **Bots** (`service/BotGuard`, `rules/JoinWaveRule`, `rules/NewcomerRule`): only accounts new to the network. Signals: same /24 (/48) as others in the wave window, names that differ only in trailing digits, no movement or head turn in the first `bots.watch-seconds`, chat spam, no client brand or a bot library's brand. Two signals make a case. A wave (`bots.wave-joins` in `bots.wave-seconds`) with a shared network or names locks new accounts out of the network for `bots.lockdown-minutes` (`/anticheat lockdown`). Network hashes (keyed, `address-hash`) stay in memory only for the wave window.
+- **Macros** (`service/MacroWatch`, `rules/MacroRule`, `model/ClickCadence`): gaps between left clicks (arm swings not explained by mining, dropping or a right click) and right clicks. Regular: median absolute deviation under `macros.max-variation` % for `macros.minutes`, gaps of 200 ms and more, a held right button (4 ticks) excluded. Fast: more than `macros.max-cps` left clicks a second for 3 s. Measured on the input, not on AFK status.
+- `/anticheat bots` (cases screen, also from the suspects screen), help page `mod-bots`.
