@@ -146,8 +146,6 @@ public final class ModerationModule implements FlexModule {
         context.core().messages().defineFrom(
                 getClass().getResourceAsStream("messages.yml"),
                 context.chat().brand()::chatPrefix);
-        // The same lines said plainly, for a server whose Message tone is SERIOUS.
-        context.core().messages().seriousFrom(getClass().getResourceAsStream("messages-serious.yml"));
 
         // Before anything asks about a permission. Staff are not operators, so every node has to be
         // registered with a default or hasPermission answers false for everybody who is not op — which

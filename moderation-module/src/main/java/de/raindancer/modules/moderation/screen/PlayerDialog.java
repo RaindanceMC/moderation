@@ -39,9 +39,9 @@ public final class PlayerDialog extends PlayerRoomDialog {
             look.append("\n<white>").append(seen.notes()).append("</white> staff note(s).");
         }
         return room()
-                .button("<aqua>🔍 Look into", look.toString(),
+                .button("<aqua>Look into", look.toString(),
                         answers -> new PlayerLookIntoDialog(services(), viewer, this::open, subject, subjectName).open())
-                .button("<red>⚔ Punish", "<gray>Warn, kick, mute, freeze, ban, fine, broke a rule — or lift one.",
+                .button("<red>⚔ Punish", "<gray>Warn, kick, mute, freeze, ban, fine, broke a rule, or lift one.",
                         answers -> new PlayerPunishDialog(services(), viewer, this::open, subject, subjectName).open())
                 .button("<green>⚒ Practical", (seen.where() != null ? "<green>Online now." : "<gray>Not online.")
                                 + "\n<gray>Inventory, go to them, fines, tools, staff rank.",
