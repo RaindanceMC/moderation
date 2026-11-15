@@ -1,8 +1,8 @@
 id: mod-investigate
 title: "Investigating: logs, anti-cheat, inventories"
-summary: Staff — /attempts, /audit, /chatlog, /invsee, /anticheat and the x-ray evidence.
+summary: "Staff: /attempts, /audit, /chatlog, /invsee, /anticheat and the x-ray evidence."
 intro: |
-  Everything that happens leaves a trace. Here is where to read it — and every lookup is itself logged, so be nosy for a reason.
+  Where to read what happened. Every lookup is logged too, so only look when you have a reason.
 icon: SPYGLASS
 category: Staff
 order: 53
@@ -23,11 +23,11 @@ sections:
     title: /chatlog
     permission: rains.moderation.chatlog
     text: |
-      {cmd:/chatlog player:Name from:2026-10-10 17:30 to:18:00 words "a phrase"} — also <white>day:yesterday</white>, <white>last:2h</white>, <white>page:2</white>. Times are Berlin time. Every word must match; quotes for a phrase. Searches are audited.
+      {cmd:/chatlog player:Name from:2026-10-10 17:30 to:18:00 words "a phrase"}. Also <white>day:yesterday</white>, <white>last:2h</white>, <white>page:2</white>. Times are Berlin time. Every word must match; quotes for a phrase. Searches are audited.
   - question: Where is the audit journal?
     title: /audit
     text: |
-      {cmd:/audit [player] [feature]} reads joins, teleports, gamemode changes and moderation actions; nothing shows the newest across the server. {if:moderation:records.audit}Every punishment, lift, note and report is written there.{/if}
+      {cmd:/audit [player] [feature]} reads joins, teleports, gamemode changes and moderation actions. Without arguments it shows the newest across the server. {if:moderation:records.audit}Every punishment, lift, note and report is written there.{/if}
   - question: How do I look into an inventory?
     title: /invsee
     permission: rains.moderation.invsee

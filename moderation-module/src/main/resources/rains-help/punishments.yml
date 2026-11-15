@@ -2,7 +2,7 @@ id: punishments
 title: Mutes, bans and warnings
 summary: What a mute, freeze, kick, warning or ban means for you, how long it lasts, and how to appeal.
 intro: |
-  Nobody likes this page, and everybody ends up reading it at some point. Here is what the staff can do, what you will see when they do, and what comes next.
+  What the staff can do, what you will see when they do it, and what happens next.
 icon: IRON_BARS
 category: Chat & community
 order: 41
@@ -26,7 +26,7 @@ sections:
   - question: What is a freeze?
     title: Freeze
     text: |
-      A short build ban: you cannot build or break blocks while a moderator walks over to talk to you. Typically minutes, by default {setting:moderation:punishments.default-freeze-length}. Talk to them — that is the point.
+      A short build ban: you cannot build or break blocks while a moderator walks over to talk to you. Typically minutes, by default {setting:moderation:punishments.default-freeze-length}. Talk to them.
   - question: What does a kick do?
     title: Kick
     text: |
@@ -50,14 +50,14 @@ sections:
   - question: Can staff punish for any reason?
     title: Rules
     text: |
-      They punish by the server's rules — read them with {run:/rules}. Common reasons have ladders: the first offence gets a short punishment, repeats get longer.{if:moderation:punishments.escalate} That is how it works here: your record decides the length.{/if}
+      They punish by the server's rules. Read them with {run:/rules}. Common reasons have ladders: the first offence gets a short punishment, repeats get longer.{if:moderation:punishments.escalate} That is how it works here: your record decides the length.{/if}
       Some rule breaks have a fixed punishment written next to the rule.
   - question: Is my punishment unfair?
     title: Appeals
     text: |
-      {if:moderation:punishments.appeal-message}{setting:moderation:punishments.appeal-message}{else}Ask the staff politely. Insulting them has never shortened a ban.{/if}
+      {if:moderation:punishments.appeal-message}{setting:moderation:punishments.appeal-message}{else}Ask the staff politely. Insults will not shorten a ban.{/if}
       Staff cannot be punished by other staff behind your back: a ban or mute needs a named moderator and a reason, and is journalled so it can be reviewed.
   - question: Can I dodge a punishment?
     title: Evading
     text: |
-      Trying to — an alt account, a second client — is a rule break and a worse punishment. Staff are told when a banned player knocks, a muted one talks or a frozen one builds anyway.
+      Trying to, for example with an alt account, is a rule break and gets a worse punishment. Staff are told when a banned player knocks, a muted one talks or a frozen one builds anyway.

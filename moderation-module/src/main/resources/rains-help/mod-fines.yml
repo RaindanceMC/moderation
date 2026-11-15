@@ -1,8 +1,8 @@
 id: mod-fines
 title: Fining players
-summary: Staff — /fine, forgiving and revoking, limits, victim shares and warning costs.
+summary: "Staff: /fine, forgiving and revoking, limits, victim shares and warning costs."
 intro: |
-  A fine hurts exactly as much as the number says. Use sparingly and write a reason somebody can read in six months.
+  Use fines sparingly, and write a reason somebody can still understand in six months.
 icon: GOLD_INGOT
 category: Staff
 order: 52
@@ -16,7 +16,7 @@ sections:
   - question: How do I fine somebody?
     title: /fine
     text: |
-      {cmd:/fine <player> <amount> <reason>} — amounts read <white>250</white> or <white>1.5k</white>. Add <white>victim:<name></white> at the end to give the victim a share{if:moderation:fines.victim-share-percent > 0}: {setting:moderation:fines.victim-share-percent|percent} of it, taken from the fined player; the rest is a normal fee{else} (switched off here: the whole fine is a fee){/if}.
+      {cmd:/fine <player> <amount> <reason>}: amounts read <white>250</white> or <white>1.5k</white>. Add <white>victim:<name></white> at the end to give the victim a share{if:moderation:fines.victim-share-percent > 0}: {setting:moderation:fines.victim-share-percent|percent} of it, taken from the fined player; the rest is a normal fee{else} (switched off here: the whole fine is a fee){/if}.
       The server needs an economy, or nobody can be fined.
   - question: How much may I fine?
     title: Limits

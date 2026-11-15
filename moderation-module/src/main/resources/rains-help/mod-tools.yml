@@ -1,8 +1,8 @@
 id: mod-tools
 title: Moderating players
-summary: Staff — /mod, warn, mute, freeze, kick, ban, unban, history, rule breaks, and who may do what.
+summary: "Staff: /mod, warn, mute, freeze, kick, ban, unban, history, rule breaks, and who may do what."
 intro: |
-  Staff business. Most of this lives behind one door, {run:/mod}, but every action also has a typed form for when you are quick.
+  Most of this is in one menu, {run:/mod}. Every action also has a typed command.
 icon: IRON_BARS
 category: Staff
 order: 50
@@ -27,7 +27,7 @@ sections:
   - question: How do I ban, and how long?
     title: Bans
     text: |
-      {cmd:/ban <player> [length|reason] [reason]} — default length {setting:moderation:punishments.default-ban-length}. {cmd:/unban <player>} lifts it; the ban stays on the record.
+      {cmd:/ban <player> [length|reason] [reason]}: default length {setting:moderation:punishments.default-ban-length}. {cmd:/unban <player>} lifts it; the ban stays on the record.
       Mods hold <white>tempban</white>: up to {setting:moderation:punishments.mod-tempban-max}, never permanent. Admins hold <white>ban</white>: any length, and they alone lift a permanent ban. {if:moderation:punishments.kick-on-ban}Banning kicks the player at once, on any server of the network.{else}A ban applies at the next login.{/if}
   - question: What are the preset reasons?
     title: Reasons and ladders
@@ -43,7 +43,7 @@ sections:
     title: /broke
     permission: rains.moderation.warn
     text: |
-      {cmd:/broke <player>} shows the server's rules; pick one — or {cmd:/broke <player> <rule number> [what happened]} — and the player gets that rule's own punishment, counted as their 1st, 2nd, … offence. A rule with no fixed punishment is refused; set one with <white>/rules punishment</white>.
+      {cmd:/broke <player>} shows the server's rules. Pick one, or use {cmd:/broke <player> <rule number> [what happened]}, and the player gets that rule's own punishment, counted as their 1st, 2nd, … offence. A rule with no fixed punishment is refused; set one with <white>/rules punishment</white>.
   - question: How do I read a record?
     title: /history
     text: |
@@ -51,10 +51,10 @@ sections:
   - question: Can I act on anybody?
     title: Limits
     text: |
-      Not on yourself (for punishments), not on <i>protected</i> accounts — operators, and anybody the console named with {cmd:/protect <player>} (undo with {cmd:/unprotect <player>}, console only; no permission can grant it). Only the console may act on them.
+      Not on yourself (for punishments), not on <i>protected</i> accounts: operators, and anybody the console named with {cmd:/protect <player>}. Undo it with {cmd:/unprotect <player>}. Both work from the console only, and no permission grants them. Only the console may act on them.
       {if:moderation:announce.show-moderator}Your name appears in public announcements.{else}Your name is only shown to staff.{/if}
   - question: What are the staff ranks?
     title: Ranks
     text: |
-      <white>Support</white> warns and reads records, never stops anybody. <white>Moderator</white> adds mute, kick, tempban, freeze, vanish. <white>Admin</white> adds permanent bans and settings. <white>Owner</white> everything. Builder, Creator, Developer and Tester are departments with their own narrow powers — a Builder gets creative, WorldEdit and /setblock, /fill, /clone and the like, but only while in admin mode ({run:/admin}).
+      <white>Support</white> warns and reads records, never stops anybody. <white>Moderator</white> adds mute, kick, tempban, freeze, vanish. <white>Admin</white> adds permanent bans and settings. <white>Owner</white> everything. Builder, Creator, Developer and Tester are departments with their own narrow powers. A Builder gets creative, WorldEdit and /setblock, /fill, /clone and the like, but only while in admin mode ({run:/admin}).
       {if:moderation-duty:staff.powers-need-admin-mode}Staff powers only work while you are in admin mode; see {topic:admin-mode}.{/if}

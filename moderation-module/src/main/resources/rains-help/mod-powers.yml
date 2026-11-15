@@ -1,8 +1,8 @@
 id: mod-powers
 title: Staff powers and world tools
-summary: Staff — vanish, god, instakill, instabreak, vault, dev mode, ore veins, mob packs, banhammer and promotions.
+summary: "Staff: vanish, god, instakill, instabreak, vault, dev mode, ore veins, mob packs, banhammer and promotions."
 intro: |
-  Great power, mandatory audit trail. Most of these are logged; all of them are noticed.
+  Most of these actions are logged.
 icon: NETHERITE_SWORD
 category: Staff
 order: 54
@@ -20,11 +20,11 @@ sections:
   - question: What are god, instakill and instabreak?
     title: Self tools
     text: |
-      {cmd:/god [player]} / {cmd:/ungod [player]}: invulnerable until logout. {cmd:/instakill [player]} (admins): everything hit dies, pets and livestock included. {cmd:/instabreak [player]}: blocks break at once — claim protection still applies.
+      {cmd:/god [player]} / {cmd:/ungod [player]}: invulnerable until logout. {cmd:/instakill [player]} (admins): everything hit dies, pets and livestock included. {cmd:/instabreak [player]}: blocks break at once, claim protection still applies.
   - question: What is the vault?
     title: /vault
     text: |
-      {run:/vault} opens an operator's personal stash. Sneak-right-click with the Banhammer puts it in; an empty hand takes it out.
+      {run:/vault} opens an operator's personal stash. Sneak-right-click with the Banhammer puts it in, an empty hand takes it out.
   - question: What is dev mode?
     title: /dev
     text: |

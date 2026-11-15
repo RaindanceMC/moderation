@@ -1,8 +1,8 @@
 id: mod-reports
 title: Reports, notes and staff chat
-summary: Staff — the report queue, closing and dismissing reports, notes on players, the staff channel and automatic reports.
+summary: "Staff: the report queue, closing and dismissing reports, notes on players, the staff channel and automatic reports."
 intro: |
-  The queue is the one place players write to. Read it, answer it, and spare a thought for whoever has to read the next one.
+  The report queue is where players tell the staff about problems. Read it and answer it.
 icon: WRITABLE_BOOK
 category: Staff
 order: 51
@@ -17,7 +17,7 @@ sections:
     title: /reports
     text: |
       {run:/reports list} shows everything open; {cmd:/reports <id>} opens one; {run:/mod reports} opens the queue as a menu. A report shows the reporter's text, the places both stood, and a severity from its category. Close it with what you did, or dismiss it with why nothing was there.
-      {if:moderation:reports.tell-reporter}The reporter is told how it ended — be kind in the outcome line.{/if}
+      {if:moderation:reports.tell-reporter}The reporter is told how it ended, so keep the outcome line polite.{/if}
   - question: Do I get told about new reports?
     title: Alerts
     text: |
@@ -27,7 +27,7 @@ sections:
     title: Automatic reports
     text: |
       {if:moderation:suspicious.enabled}Typing a watched command ({setting:moderation:suspicious.commands}) files a report, at most once per {setting:moderation:suspicious.cooldown-seconds|seconds} per player.{/if}
-      {if:moderation:xray.enabled}Suspicious mining files an x-ray report — see {cmd:/mod xray} for the suspicion page, with evidence you can replay.{/if}
+      {if:moderation:xray.enabled}Suspicious mining files an x-ray report. {cmd:/mod xray} opens the suspicion page, with evidence you can replay.{/if}
       {if:moderation:anticheat.auto-report}Persistent anti-cheat flags file one report from "the console".{/if}
       Staff holding the bypass permission (<white>rainsmoderation.suspicious.bypass</white>, and operators) are exempt.
   - question: What are staff notes?
