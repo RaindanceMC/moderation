@@ -71,7 +71,7 @@ import java.util.UUID;
  */
 public final class ModerationModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.28.1")
+    private static final ModuleInfo INFO = ModuleInfo.of("moderation", "Moderation", "3.29.0")
             .describedAs("Bans, mutes, reports, staff notes and the screens for them, over "
                     + "RainsCore's punishments, which stay whether or not this is installed")
             .by("Raindancer118");
@@ -538,6 +538,20 @@ public final class ModerationModule implements FlexModule {
 
         // Grim's flags, the network's record of them, anti-ESP and the client policy: one module with moderation.
         AntiCheatServices antiCheat = AntiCheat.start(context, settings, xrayEvidence);
+
+        // The two staff alert switches are on /preferences (Core 2.103.0); the commands stay as shortcuts.
+        try {
+            de.raindancer.core.ui.preference.Preference anticheatPreference = ModerationPreferences.anticheatAlerts(antiCheat::alerts);
+            de.raindancer.core.ui.preference.Preference attemptsPreference = ModerationPreferences.attemptAlerts(() -> services.plugin());
+            de.raindancer.core.ui.preference.Preferences.offer(context.plugin(), anticheatPreference);
+            de.raindancer.core.ui.preference.Preferences.offer(context.plugin(), attemptsPreference);
+            context.closeWith(() -> {
+                de.raindancer.core.ui.preference.Preferences.withdraw(anticheatPreference);
+                de.raindancer.core.ui.preference.Preferences.withdraw(attemptsPreference);
+            });
+        } catch (LinkageError olderCore) {
+            context.log().info("RainsCore is older than 2.103.0: the staff alerts are not on /preferences.");
+        }
         // Staff see their queue on the sidebar (Core 2.58.0): reports waiting, x-ray suspects — only for those who may
         // read the queue, and only while there is something; hidden or moved on their sidebar page like any section.
         de.raindancer.core.ui.scoreboard.SidebarSections.register("moderation", "Staff", 20, id -> {
