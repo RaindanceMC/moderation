@@ -93,7 +93,7 @@ public final class SuspectsMenu extends PaginatedMenu<PlayerTrack> implements IM
         });
         toolbar(6, Icons.of(Material.ARMOR_STAND, "<yellow>Bots and macros", "<gray>Suspected bot accounts and macro users,",
                 "<gray>and the lockdown for new accounts.", "<dark_gray>Click to open."),
-                click -> BotCasesMenu.load(services, viewer, cases -> new BotCasesMenu(services, viewer, this, cases).open()));
+                click -> BotCasesMenu.open(services, viewer, this));
     }
 
     @Override

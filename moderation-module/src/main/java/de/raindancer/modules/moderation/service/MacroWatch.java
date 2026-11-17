@@ -28,11 +28,6 @@ public final class MacroWatch implements IModerationService {
     static final int JUDGE_EVERY = 5;
     static final int CAPACITY = 1_000;
 
-    @FunctionalInterface
-    public interface Reporter {
-        void file(UUID player, String name, String text);
-    }
-
     private static final class Entry {
         final ClickCadence cadence = new ClickCadence(CAPACITY);
         volatile String name;
@@ -48,12 +43,12 @@ public final class MacroWatch implements IModerationService {
     private final BotGuard.Staff staff;
     private final BotGuard.Cases cases;
     private final BotGuard.Hands hands;
-    private final Reporter reports;
+    private final BotGuard.Reporter reports;
     private final MacroRule rule = new MacroRule();
     private final Map<UUID, Entry> entries = new ConcurrentHashMap<>();
 
     public MacroWatch(Supplier<BotGuardSettings> settings, LongSupplier clock, BotGuard.Staff staff, BotGuard.Cases cases,
-                      BotGuard.Hands hands, Reporter reports) {
+                      BotGuard.Hands hands, BotGuard.Reporter reports) {
         this.settings = settings;
         this.clock = clock;
         this.staff = staff;
@@ -123,7 +118,7 @@ public final class MacroWatch implements IModerationService {
         staff.tell("anticheat.macro-suspect", "player", name, "evidence", evidence);
         cases.record(player, name, SuspectCase.Kind.MACRO, at, evidence);
         if (now.macroReports()) {
-            reports.file(player, name, "Suspected macro: " + evidence);
+            reports.file(player, name, evidence);
         }
         AutoAction action = AutoAction.parse(now.macroAction());
         if (!action.isNone()) {

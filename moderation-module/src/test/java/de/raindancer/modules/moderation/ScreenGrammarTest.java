@@ -344,8 +344,10 @@ class ScreenGrammarTest {
                 continue;   // never opened themselves; their subclasses are
             }
             String elsewhere = everything.replace(screen.body(), "");
+            // A screen that loads first opens through its own static entry point: BotCasesMenu.openFor(...).
             if (!elsewhere.contains("new " + screen.name() + "(")
-                    && !elsewhere.contains("." + screen.name() + "(")) {
+                    && !elsewhere.contains("." + screen.name() + "(")
+                    && !elsewhere.contains(screen.name() + ".open")) {
                 orphans.add(screen.name());
             }
         }

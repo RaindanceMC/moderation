@@ -19,9 +19,13 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.function.Consumer;
 
-/** Suspected bot accounts and macro users on the whole network, newest first, and the lockdown switch. */
+/**
+ * Suspected bot accounts and macro users on the whole network, newest first, and the lockdown switch. Opened from a
+ * player's profile it shows only their cases, without the switch.
+ */
 public final class BotCasesMenu extends PaginatedMenu<SuspectCase> implements IModerationScreen {
 
     private static final int SHOWN = 200;
@@ -29,20 +33,49 @@ public final class BotCasesMenu extends PaginatedMenu<SuspectCase> implements IM
     private final AntiCheatServices services;
     private final Menu back;
     private final List<SuspectCase> cases;
+    /** Whose cases these are; null for everybody's. */
+    private final UUID subject;
+    private final String subjectName;
 
     public BotCasesMenu(AntiCheatServices services, Player viewer, Menu parent, List<SuspectCase> cases) {
+        this(services, viewer, parent, cases, null, null);
+    }
+
+    private BotCasesMenu(AntiCheatServices services, Player viewer, Menu parent, List<SuspectCase> cases,
+                         UUID subject, String subjectName) {
         super(viewer, services.chat().brand(), parent);
         this.services = services;
         this.back = parent;
         this.cases = List.copyOf(cases);
+        this.subject = subject;
+        this.subjectName = subjectName;
     }
 
     /** Reads the cases off the server's threads, then hands them over on the viewer's own. */
     public static void load(AntiCheatServices services, Player viewer, Consumer<List<SuspectCase>> then) {
+        load(services, viewer, null, then);
+    }
+
+    private static void load(AntiCheatServices services, Player viewer, UUID subject, Consumer<List<SuspectCase>> then) {
         Scheduling.async(services.plugin(), () -> {
-            List<SuspectCase> found = services.bots().cases().newest(SHOWN);
+            List<SuspectCase> found = subject == null ? services.bots().cases().newest(SHOWN)
+                    : services.bots().cases().about(subject, SHOWN);
             Scheduling.entity(services.plugin(), viewer, () -> then.accept(found));
         });
+    }
+
+    /** Everybody's cases. */
+    public static void open(AntiCheatServices services, Player viewer, Menu parent) {
+        load(services, viewer, null, found -> new BotCasesMenu(services, viewer, parent, found).open());
+    }
+
+    /** One player's cases, from their profile. */
+    public static void openFor(AntiCheatServices services, Player viewer, Menu parent, UUID subject, String name) {
+        load(services, viewer, subject, found -> new BotCasesMenu(services, viewer, parent, found, subject, name).open());
+    }
+
+    private void reload() {
+        load(services, viewer, subject, fresh -> new BotCasesMenu(services, viewer, back, fresh, subject, subjectName).open());
     }
 
     public static String kindWord(SuspectCase.Kind kind) {
@@ -51,7 +84,9 @@ public final class BotCasesMenu extends PaginatedMenu<SuspectCase> implements IM
 
     @Override
     protected Component title() {
-        return MiniMessage.miniMessage().deserialize("<dark_gray>Anti-cheat · <white>bots and macros</white>");
+        return MiniMessage.miniMessage().deserialize(subject == null
+                ? "<dark_gray>Anti-cheat · <white>bots and macros</white>"
+                : "<dark_gray>Bots and macros · <white>" + MiniMessage.miniMessage().escapeTags(subjectName) + "</white>");
     }
 
     @Override
@@ -66,7 +101,10 @@ public final class BotCasesMenu extends PaginatedMenu<SuspectCase> implements IM
 
     @Override
     protected ItemStack emptyIcon() {
-        return Icons.of(Material.LIME_DYE, "<gray>No cases", "<gray>No bot account or macro was suspected lately.");
+        return subject == null
+                ? Icons.of(Material.LIME_DYE, "<gray>No cases", "<gray>No bot account or macro was suspected lately.")
+                : Icons.of(Material.LIME_DYE, "<gray>No cases", "<gray>They were never suspected of being a bot",
+                "<gray>or of using a macro, as far as cases are kept.");
     }
 
     @Override
@@ -94,7 +132,7 @@ public final class BotCasesMenu extends PaginatedMenu<SuspectCase> implements IM
             Scheduling.async(services.plugin(), () -> {
                 services.bots().cases().dismiss(found.id());
                 services.messages().send(viewer, "anticheat.bots-dismissed", "player", found.name());
-                load(services, viewer, fresh -> new BotCasesMenu(services, viewer, back, fresh).open());
+                reload();
             });
             return;
         }
@@ -109,6 +147,9 @@ public final class BotCasesMenu extends PaginatedMenu<SuspectCase> implements IM
     @Override
     protected void render() {
         super.render();
+        if (subject != null) {
+            return;
+        }
         var guard = services.bots().guard();
         boolean locked = guard.lockedDown();
         int minutes = services.bots().config().lockdownMinutes();

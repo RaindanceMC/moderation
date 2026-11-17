@@ -30,10 +30,10 @@ Grim detects; this module keeps the network's account of it. What was added for 
 - **X-ray suspicion to staff**: past 90 % the anti-cheat alert channel says so (`anticheat.xray-suspect`), at most every ten minutes, before the report at `xray.report-score` fires.
 - **X-ray ledgers follow the player** (`ac_xray`): written with every flush, read on arrival when the network's copy is newer.
 
-## Bot accounts and macros (3.30.0)
+## Bot accounts and macros (3.30.0, profile and reports 3.31.0)
 
 Settings `moderation-bots` (in game under Anti-cheat). Staff are told, a case is written (`ac_suspect`, network-wide, deleted after `cases.keep-days`, default 30). Nobody is punished unless `bots.action` / `macros.action` is set (kick, freeze, ban with or without a length).
 
 - **Bots** (`service/BotGuard`, `rules/JoinWaveRule`, `rules/NewcomerRule`): only accounts new to the network. Signals: same /24 (/48) as others in the wave window, names that differ only in trailing digits, no movement or head turn in the first `bots.watch-seconds`, chat spam, no client brand or a bot library's brand. Two signals make a case. A wave (`bots.wave-joins` in `bots.wave-seconds`) with a shared network or names locks new accounts out of the network for `bots.lockdown-minutes` (`/anticheat lockdown`). Network hashes (keyed, `address-hash`) stay in memory only for the wave window.
 - **Macros** (`service/MacroWatch`, `rules/MacroRule`, `model/ClickCadence`): gaps between left clicks (arm swings not explained by mining, dropping or a right click) and right clicks. Regular: median absolute deviation under `macros.max-variation` % for `macros.minutes`, gaps of 200 ms and more, a held right button (4 ticks) excluded. Fast: more than `macros.max-cps` left clicks a second for 3 s. Measured on the input, not on AFK status.
-- `/anticheat bots` (cases screen, also from the suspects screen), help page `mod-bots`.
+- `/anticheat bots` (cases screen, also from the suspects screen), help page `mod-bots`. A player's profile (Look into → Bots and macros) shows their own cases and how many. Bot cases (`bots.report`) and macro findings (`macros.report`) also go into the report queue as `bot:` / `macro:`, once while one is open.

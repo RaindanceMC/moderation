@@ -15,8 +15,8 @@ import java.util.Locale;
 import java.util.UUID;
 
 /**
- * What a player has done: their record, reports, mining evidence, the anti-cheat, attempts while punished, chat,
- * notes and the audit trail. Each is a long list and stays a paged chest; Back on it comes back here.
+ * What a player has done: their record, reports, mining evidence, the anti-cheat and its bot and macro cases,
+ * attempts while punished, chat, notes and the audit trail. Each is a long list and stays a paged chest; Back on it comes back here.
  */
 public final class PlayerLookIntoDialog extends PlayerRoomDialog {
 
@@ -61,6 +61,13 @@ public final class PlayerLookIntoDialog extends PlayerRoomDialog {
         } else {
             page.button(false, "<gray>Anti-cheat", "<gray>What the checks saw of them.", "None on this server", answers -> { });
         }
+        var antiCheat = de.raindancer.modules.moderation.AntiCheatCommands.running();
+        boolean casesAllowed = antiCheat.isPresent() && viewer.hasPermission(ANTICHEAT);
+        page.button(casesAllowed, antiCheat.isPresent() ? "<yellow>Bots and macros" : "<gray>Bots and macros",
+                String.join("\n", seen.suspectLore()),
+                antiCheat.isPresent() ? "For whoever may use the anti-cheat" : "None on this server",
+                answers -> antiCheat.ifPresent(live -> de.raindancer.modules.moderation.screen.BotCasesMenu
+                        .openFor(live, viewer, here(), subject, subjectName)));
         page.button(may(ModerationPermission.ATTEMPTS), "<yellow>Attempts while punished", (access.attempts()
                         ? "<gray>" + seen.attempts() + " kept: joins, chat, building." : "<gray>Joins, chat, building while punished.")
                         + "\n<dark_gray>/attempts searches everybody's.",
@@ -116,6 +123,6 @@ public final class PlayerLookIntoDialog extends PlayerRoomDialog {
 
     @Override
     public String describe() {
-        return "what a player has done: record, reports, mining evidence, attempts, chat, notes, audit";
+        return "what a player has done: record, reports, mining evidence, bot and macro cases, attempts, chat, notes, audit";
     }
 }

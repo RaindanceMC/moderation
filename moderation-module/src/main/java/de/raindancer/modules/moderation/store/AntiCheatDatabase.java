@@ -65,7 +65,9 @@ public final class AntiCheatDatabase {
                 server TEXT    NOT NULL,
                 detail TEXT    NOT NULL
             )""",
-            "CREATE INDEX ac_suspect_at ON ac_suspect (at)");
+            "CREATE INDEX ac_suspect_at ON ac_suspect (at)",
+            // 3.31.0: one player's cases, for their profile.
+            "CREATE INDEX ac_suspect_player ON ac_suspect (player, at)");
 
     private AntiCheatDatabase() {
     }

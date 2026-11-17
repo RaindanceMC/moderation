@@ -73,4 +73,19 @@ class SuspectCasesTest {
         assertThat(hub.sweep(5000)).isTrue();
         assertThat(hub.newest(10)).extracting(SuspectCase::name).containsExactly("New");
     }
+
+    @Test
+    @DisplayName("one player's cases, from every server, newest first, and how many there are")
+    void aboutOnePlayer() {
+        SuspectCases hub = server("hub");
+        SuspectCases smp = server("smp");
+        UUID clicker = UUID.randomUUID();
+        hub.record(clicker, "Clicker", SuspectCase.Kind.MACRO, 1000, "first");
+        hub.record(UUID.randomUUID(), "Other", SuspectCase.Kind.BOT, 1500, "not theirs");
+        smp.record(clicker, "Clicker", SuspectCase.Kind.MACRO, 2000, "second");
+
+        assertThat(hub.about(clicker, 10)).extracting(SuspectCase::detail).containsExactly("second", "first");
+        assertThat(hub.count(clicker)).isEqualTo(2);
+        assertThat(hub.count(UUID.randomUUID())).isZero();
+    }
 }

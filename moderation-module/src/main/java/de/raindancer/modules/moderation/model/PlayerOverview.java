@@ -25,12 +25,13 @@ import java.util.UUID;
  * @param ruleOffences per rule title, how often they broke it
  * @param balance   their balance, formatted; null without an economy
  * @param owed      unpaid fines, formatted; null without an economy
+ * @param suspects  bot and macro cases about them on the network; -1 where no anti-cheat runs
  */
 public record PlayerOverview(UUID id, String name, List<String> oldNames, Presence presence, Instant firstJoined,
                              Instant lastSeen, Duration playtime, Where where, List<Punishment> inForce,
                              int recordEntries, int recentWarnings, Map<String, Integer> ruleOffences,
                              int openReports, int reports, int notes, int attempts, Xray xray, String balance,
-                             String owed) {
+                             String owed, int suspects) {
 
     /** Whether they are here. */
     public enum Presence {
@@ -241,6 +242,15 @@ public record PlayerOverview(UUID id, String name, List<String> oldNames, Presen
 
     // ------------------------------------------------------------------ building
 
+    /** The lines on their "Bots and macros" button. */
+    public List<String> suspectLore() {
+        if (suspects < 0) {
+            return List.of("<gray>Bot and macro cases about them.");
+        }
+        return List.of(suspects == 0 ? "<green>No case on record." : "<gray>" + suspects + " case(s) on record.",
+                "<dark_gray>Suspected bot account or macro, every server.");
+    }
+
     public static Builder of(UUID id, String name) {
         return new Builder(id, name);
     }
@@ -266,6 +276,7 @@ public record PlayerOverview(UUID id, String name, List<String> oldNames, Presen
         private Xray xray = Xray.NONE;
         private String balance;
         private String owed;
+        private int suspects = -1;
 
         private Builder(UUID id, String name) {
             this.id = id;
@@ -337,10 +348,15 @@ public record PlayerOverview(UUID id, String name, List<String> oldNames, Presen
             return this;
         }
 
+        public Builder suspects(int cases) {
+            this.suspects = cases;
+            return this;
+        }
+
         public PlayerOverview build() {
             return new PlayerOverview(id, name, oldNames, presence, firstJoined, lastSeen, playtime, where, inForce,
                     recordEntries, recentWarnings, ruleOffences, openReports, reports, notes, attempts, xray, balance,
-                    owed);
+                    owed, suspects);
         }
     }
 }

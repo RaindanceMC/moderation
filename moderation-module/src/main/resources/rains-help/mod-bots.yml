@@ -16,7 +16,7 @@ sections:
     title: Signals
     text: |
       Only new accounts are watched. Signals: joining in a wave with others from one network (at least {setting:moderation-bots:bots.same-network}) or with names that differ only in their digits (at least {setting:moderation-bots:bots.same-names}), not moving or looking around in the first {setting:moderation-bots:bots.watch-seconds|seconds}, spamming the chat, sending no client brand or a bot client's brand.
-      From two signals staff are told and a case is written. One alone is common: newcomers reading the rules stand still.
+      From two signals staff are told and a case is written. One alone is common: newcomers reading the rules stand still.{if:moderation-bots:bots.report} The case also goes into the report queue.{/if}
   - question: What happens during a join wave?
     title: Lockdown
     text: |
@@ -30,7 +30,7 @@ sections:
   - question: Where are the cases?
     title: /anticheat bots
     text: |
-      {run:/anticheat bots} lists cases from every server, newest first: who, what was seen, when and where. Click a case for the player's checks, right click to dismiss it (needs <white>rainsanticheat.manage</white>). The suspects screen ({run:/anticheat}) has a button for it.
+      {run:/anticheat bots} lists cases from every server, newest first: who, what was seen, when and where. Click a case for the player's checks, right click to dismiss it (needs <white>rainsanticheat.manage</white>). The suspects screen ({run:/anticheat}) has a button for it, and a player's profile shows their own cases under Look into, Bots and macros.
       Cases are deleted after {setting:moderation-bots:cases.keep-days|days}. They hold name, account id and what was seen, never an address. Network hashes of new accounts are only kept in memory for the wave window.
   - question: Does anybody get punished automatically?
     title: Actions

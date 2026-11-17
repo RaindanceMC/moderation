@@ -83,6 +83,11 @@ public record BotGuardSettings(
         @Key("bots.action-signals")
         int actionSignals,
 
+        @In("moderation/anticheat/bots") @Title("Report bot accounts")
+        @Describe("A suspected bot account also goes into the report queue, once while a report is open.")
+        @Key("bots.report")
+        boolean botReports,
+
         @In("moderation/anticheat/macros") @Title("Watch for macros")
         @Describe("Measures the gaps between clicks. A click rhythm that barely varies for minutes, or more left "
                 + "clicks a second than a hand manages, is told to staff with the numbers.")
@@ -128,7 +133,7 @@ public record BotGuardSettings(
 
     public static final BotGuardSettings DEFAULTS = new BotGuardSettings(
             true, 6, 60, 3, 3, true, 10, 120,
-            List.of("mineflayer", "mcprotocollib", "minecraft-protocol"), "none", 3,
+            List.of("mineflayer", "mcprotocollib", "minecraft-protocol"), "none", 3, true,
             true, 3, 40, 5, 22, true, "none",
             30);
 
@@ -148,37 +153,43 @@ public record BotGuardSettings(
 
     public BotGuardSettings withBots(boolean on) {
         return new BotGuardSettings(on, waveJoins, waveSeconds, sameNetwork, sameNames, autoLockdown, lockdownMinutes,
-                watchSeconds, botBrands, botAction, actionSignals, macros, macroMinutes, macroSamples, maxVariation,
+                watchSeconds, botBrands, botAction, actionSignals, botReports, macros, macroMinutes, macroSamples, maxVariation,
                 maxCps, macroReports, macroAction, keepDays);
     }
 
     public BotGuardSettings withAutoLockdown(boolean on) {
         return new BotGuardSettings(bots, waveJoins, waveSeconds, sameNetwork, sameNames, on, lockdownMinutes,
-                watchSeconds, botBrands, botAction, actionSignals, macros, macroMinutes, macroSamples, maxVariation,
+                watchSeconds, botBrands, botAction, actionSignals, botReports, macros, macroMinutes, macroSamples, maxVariation,
                 maxCps, macroReports, macroAction, keepDays);
     }
 
     public BotGuardSettings withBotAction(String action, int signals) {
         return new BotGuardSettings(bots, waveJoins, waveSeconds, sameNetwork, sameNames, autoLockdown, lockdownMinutes,
-                watchSeconds, botBrands, action, signals, macros, macroMinutes, macroSamples, maxVariation,
+                watchSeconds, botBrands, action, signals, botReports, macros, macroMinutes, macroSamples, maxVariation,
                 maxCps, macroReports, macroAction, keepDays);
     }
 
     public BotGuardSettings withMacros(boolean on) {
         return new BotGuardSettings(bots, waveJoins, waveSeconds, sameNetwork, sameNames, autoLockdown, lockdownMinutes,
-                watchSeconds, botBrands, botAction, actionSignals, on, macroMinutes, macroSamples, maxVariation,
+                watchSeconds, botBrands, botAction, actionSignals, botReports, on, macroMinutes, macroSamples, maxVariation,
                 maxCps, macroReports, macroAction, keepDays);
     }
 
     public BotGuardSettings withMacroReports(boolean on) {
         return new BotGuardSettings(bots, waveJoins, waveSeconds, sameNetwork, sameNames, autoLockdown, lockdownMinutes,
-                watchSeconds, botBrands, botAction, actionSignals, macros, macroMinutes, macroSamples, maxVariation,
+                watchSeconds, botBrands, botAction, actionSignals, botReports, macros, macroMinutes, macroSamples, maxVariation,
                 maxCps, on, macroAction, keepDays);
     }
 
     public BotGuardSettings withMacroAction(String action) {
         return new BotGuardSettings(bots, waveJoins, waveSeconds, sameNetwork, sameNames, autoLockdown, lockdownMinutes,
-                watchSeconds, botBrands, botAction, actionSignals, macros, macroMinutes, macroSamples, maxVariation,
+                watchSeconds, botBrands, botAction, actionSignals, botReports, macros, macroMinutes, macroSamples, maxVariation,
                 maxCps, macroReports, action, keepDays);
+    }
+
+    public BotGuardSettings withBotReports(boolean on) {
+        return new BotGuardSettings(bots, waveJoins, waveSeconds, sameNetwork, sameNames, autoLockdown, lockdownMinutes,
+                watchSeconds, botBrands, botAction, actionSignals, on, macros, macroMinutes, macroSamples, maxVariation,
+                maxCps, macroReports, macroAction, keepDays);
     }
 }

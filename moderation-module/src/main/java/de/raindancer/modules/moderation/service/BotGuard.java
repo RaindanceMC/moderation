@@ -55,6 +55,14 @@ public final class BotGuard implements IModerationService {
         void record(UUID player, String name, SuspectCase.Kind kind, long at, String detail);
     }
 
+    /** Filing a report for staff; the queue puts the kind ("bot: ", "macro: ") in front. */
+    @FunctionalInterface
+    public interface Reporter {
+        Reporter NONE = (player, name, text) -> { };
+
+        void file(UUID player, String name, String text);
+    }
+
     /** What touches players: called from any thread, so implementations hop to the player's own. */
     public interface Hands {
         /** A new account during a lockdown. */
@@ -82,6 +90,7 @@ public final class BotGuard implements IModerationService {
     private final Staff staff;
     private final Cases cases;
     private final Hands hands;
+    private final Reporter reports;
     private final NetworkBus bus;
     private final AsyncPublisher publisher;
     private final NetworkBus.Subscription heard;
@@ -98,19 +107,20 @@ public final class BotGuard implements IModerationService {
 
     /** @param hash turns a network ("203.0.113.0/24") into what is kept of it: a keyed hash */
     public BotGuard(Supplier<BotGuardSettings> settings, LongSupplier clock, UnaryOperator<String> hash, Staff staff,
-                    Cases cases, Hands hands, NetworkBus bus) {
-        this(settings, clock, hash, staff, cases, hands, bus, null);
+                    Cases cases, Hands hands, Reporter reports, NetworkBus bus) {
+        this(settings, clock, hash, staff, cases, hands, reports, bus, null);
     }
 
     /** @param publishing runs the publishing; null for a thread of its own, a direct executor for tests */
     public BotGuard(Supplier<BotGuardSettings> settings, LongSupplier clock, UnaryOperator<String> hash, Staff staff,
-                    Cases cases, Hands hands, NetworkBus bus, Executor publishing) {
+                    Cases cases, Hands hands, Reporter reports, NetworkBus bus, Executor publishing) {
         this.settings = settings;
         this.clock = clock;
         this.hash = hash;
         this.staff = staff;
         this.cases = cases;
         this.hands = hands;
+        this.reports = reports == null ? Reporter.NONE : reports;
         this.bus = bus == null ? NetworkBus.NONE : bus;
         this.publisher = publishing == null ? new AsyncPublisher(this.bus, "bot-guard") : new AsyncPublisher(this.bus, publishing);
         this.heard = this.bus.subscribe(TOPIC, this::heard);
@@ -227,6 +237,9 @@ public final class BotGuard implements IModerationService {
         String detail = String.join("; ", words);
         cases.record(player, watch.name, SuspectCase.Kind.BOT, clock.getAsLong(), detail);
         staff.tell("anticheat.bot-suspect", "player", watch.name, "count", signals.size(), "signals", detail);
+        if (now.botReports()) {
+            reports.file(player, watch.name, detail);
+        }
         AutoAction action = AutoAction.parse(now.botAction());
         if (!action.isNone() && signals.size() >= now.actionSignals()) {
             hands.act(player, watch.name, action, detail);

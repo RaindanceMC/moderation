@@ -24,6 +24,7 @@ class BotGuardTest {
     private final List<String> cases = new ArrayList<>();
     private final List<UUID> refused = new ArrayList<>();
     private final List<String> acted = new ArrayList<>();
+    private final List<String> reports = new ArrayList<>();
     private final AtomicReference<BotGuardSettings> settings = new AtomicReference<>(BotGuardSettings.DEFAULTS);
 
     private final BotGuard.Hands hands = new BotGuard.Hands() {
@@ -42,7 +43,7 @@ class BotGuardTest {
         return new BotGuard(settings::get, clock::get, address -> address,
                 (key, values) -> told.add(key + " " + Arrays.toString(values)),
                 (player, name, kind, at, detail) -> cases.add(name + " " + kind + " " + detail),
-                hands, bus, Runnable::run);
+                hands, (player, name, text) -> reports.add(name + ": " + text), bus, Runnable::run);
     }
 
     private BotGuard guard() {
@@ -137,6 +138,21 @@ class BotGuardTest {
         assertThat(lines("anticheat.bot-suspect")).hasSize(1);
         assertThat(acted).isEmpty();
         assertThat(guard.watching(bot)).isFalse();
+        assertThat(reports).singleElement().asString().startsWith("Spammer: ").contains("spammed the chat");
+    }
+
+    @Test
+    @DisplayName("with bot reports off a case is written and told, but nothing goes into the report queue")
+    void noBotReports() {
+        settings.set(BotGuardSettings.DEFAULTS.withBotReports(false));
+        BotGuard guard = guard();
+        UUID bot = join(guard, "Spammer", "1.1.1.1");
+        for (int i = 0; i < 4; i++) {
+            guard.chatted(bot, "cheap coins at example.org");
+        }
+        guard.observed(bot, 0, 0, "vanilla");
+        assertThat(cases).hasSize(1);
+        assertThat(reports).isEmpty();
     }
 
     @Test
@@ -147,6 +163,7 @@ class BotGuardTest {
         guard.observed(reader, 0, 0, "vanilla");
         assertThat(cases).isEmpty();
         assertThat(told).isEmpty();
+        assertThat(reports).isEmpty();
     }
 
     @Test

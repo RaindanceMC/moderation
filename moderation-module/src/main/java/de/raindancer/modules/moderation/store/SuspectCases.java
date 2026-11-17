@@ -37,11 +37,36 @@ public final class SuspectCases {
     }
 
     public List<SuspectCase> newest(int limit) {
+        return select(null, limit);
+    }
+
+    /** One player's cases from every server, newest first. */
+    public List<SuspectCase> about(UUID player, int limit) {
+        return select(player, limit);
+    }
+
+    public int count(UUID player) {
+        return database.read(connection -> {
+            try (PreparedStatement query = connection.prepareStatement("SELECT COUNT(*) FROM ac_suspect WHERE player = ?")) {
+                query.setString(1, player.toString());
+                try (ResultSet rows = query.executeQuery()) {
+                    return rows.next() ? rows.getInt(1) : 0;
+                }
+            }
+        }).orElse(0);
+    }
+
+    private List<SuspectCase> select(UUID player, int limit) {
         return database.read(connection -> {
             List<SuspectCase> found = new ArrayList<>();
             try (PreparedStatement query = connection.prepareStatement(
-                    "SELECT id, player, name, kind, at, server, detail FROM ac_suspect ORDER BY at DESC, id DESC LIMIT ?")) {
-                query.setInt(1, Math.max(1, limit));
+                    "SELECT id, player, name, kind, at, server, detail FROM ac_suspect"
+                            + (player == null ? "" : " WHERE player = ?") + " ORDER BY at DESC, id DESC LIMIT ?")) {
+                int at = 1;
+                if (player != null) {
+                    query.setString(at++, player.toString());
+                }
+                query.setInt(at, Math.max(1, limit));
                 try (ResultSet rows = query.executeQuery()) {
                     while (rows.next()) {
                         found.add(new SuspectCase(rows.getLong(1), UUID.fromString(rows.getString(2)), rows.getString(3),

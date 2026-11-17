@@ -150,4 +150,12 @@ class PlayerOverviewTest {
         assertThat(lore).contains("PERMANENT BAN. Reasons").contains("…").doesNotContain("automatic x-ray reports");
         assertThat(PlayerOverview.shortened("short")).isEqualTo("short");
     }
+
+    @Test
+    @DisplayName("bot and macro cases: how many, nothing when there are none, and unknown where no anti-cheat runs")
+    void suspects() {
+        assertThat(mushy().build().suspectLore()).containsExactly("<gray>Bot and macro cases about them.");
+        assertThat(mushy().suspects(0).build().suspectLore()).first().asString().contains("No case");
+        assertThat(mushy().suspects(2).build().suspectLore()).first().asString().contains("2 case(s)");
+    }
 }

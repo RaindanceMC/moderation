@@ -100,6 +100,8 @@ public final class PlayerOverviewService implements IModerationService {
     }
 
     private void fromDatabases(UUID subject, PlayerOverview.Builder built) {
+        de.raindancer.modules.moderation.AntiCheatCommands.running()
+                .ifPresent(antiCheat -> built.suspects(antiCheat.bots().cases().count(subject)));
         if (!de.raindancer.core.RainsCore.isAvailable()) {
             return;
         }

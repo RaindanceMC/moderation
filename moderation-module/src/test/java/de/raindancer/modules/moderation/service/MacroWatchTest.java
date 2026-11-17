@@ -62,7 +62,8 @@ class MacroWatchTest {
         click(watch, 625, 0, 6 * 60_000L, 1);
         assertThat(told).filteredOn(line -> line.startsWith("anticheat.macro-suspect ")).hasSize(1);
         assertThat(cases).singleElement().asString().startsWith("Farmer MACRO");
-        assertThat(reports).hasSize(1);
+        // The queue puts "macro: " in front itself.
+        assertThat(reports).singleElement().asString().startsWith("Farmer: ").doesNotContainIgnoringCase("macro");
         assertThat(acted).isEmpty();
     }
 

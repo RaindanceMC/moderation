@@ -109,7 +109,7 @@ public final class AntiCheat {
         // Only a keyed hash of the network is ever held, and only for the wave window. Without the key, nothing.
         BotGuard guard = new BotGuard(settings::current, System::currentTimeMillis,
                 network -> addressKey.length == 0 ? null : BlockedAttempts.hashAddress(addressKey, network),
-                staff, record, hands, bus);
+                staff, record, hands, (id, name, text) -> AutoReports.file(id, name, "bot", text), bus);
         context.closeWith(guard::close);
         MacroWatch macros = new MacroWatch(settings::current, System::currentTimeMillis, staff, record, hands,
                 (id, name, text) -> AutoReports.file(id, name, "macro", text));

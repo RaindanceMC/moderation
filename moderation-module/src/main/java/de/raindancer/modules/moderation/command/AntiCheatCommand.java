@@ -333,7 +333,7 @@ public final class AntiCheatCommand implements BasicCommand {
     /** {@code /anticheat bots}: the cases screen, or the newest cases as lines for the console. */
     private static void bots(AntiCheatServices live, CommandSender sender) {
         if (sender instanceof Player viewer) {
-            BotCasesMenu.load(live, viewer, cases -> new BotCasesMenu(live, viewer, null, cases).open());
+            BotCasesMenu.open(live, viewer, null);
             return;
         }
         de.raindancer.core.platform.util.Scheduling.async(live.plugin(), () -> {
